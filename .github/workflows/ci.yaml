@@ -22,7 +22,7 @@ jobs:
         pip install -r requirements-dev.txt
     - name: Lint
       run: |
-        black -c .
+        black --check .
         isort -c -rc .
         flake8
         mypy
