@@ -25,4 +25,4 @@ jobs:
         black --check .
         isort -c -rc .
         flake8
-        mypy
+        mypy .
