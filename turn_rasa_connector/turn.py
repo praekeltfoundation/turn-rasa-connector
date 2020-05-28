@@ -77,7 +77,7 @@ class TurnInput(InputChannel):
     def validate_signature(secret: Text, payload: bytes, signature: Text) -> bool:
         decoded_secret = secret.encode("utf8")
         decoded_signature = base64.b64decode(signature)
-        digest = hmac.digest(decoded_secret, payload, "sha256")
+        digest = hmac.new(decoded_secret, payload, "sha256").digest()
         return hmac.compare_digest(digest, decoded_signature)
 
     def extract_message(self, message: dict) -> UserMessage:
