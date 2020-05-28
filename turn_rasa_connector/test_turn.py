@@ -1,4 +1,4 @@
-from unittest import TestCase
+from unittest import TestCase, mock
 
 from rasa.core import run, utils
 
@@ -107,3 +107,43 @@ class TurnInputTests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json, {"error": "invalid_body", "success": False})
+
+    def test_webhook_handle_valid_messages(self):
+        """
+        Should process the messages
+        """
+        self.app.agent = mock.Mock()
+        request, response = self.app.test_client.post(
+            "/webhooks/turn/webhook",
+            json={
+                "messages": [
+                    {
+                        "type": "text",
+                        "text": {"body": "message body"},
+                        "from": "27820001001",
+                        "id": "message-id",
+                        "timestamp": "1518694235",
+                    }
+                ]
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json, {"success": True})
+
+        [call] = self.app.agent.handle_message.call_args_list
+        args, kwargs = call
+        [message] = args
+        self.assertEqual(message.text, "message body")
+        self.assertEqual(message.sender_id, "27820001001")
+        self.assertEqual(message.message_id, "message-id")
+        self.assertEqual(message.metadata, {"timestamp": "1518694235"})
+
+    def test_webhook_handle_invalid_messages(self):
+        """
+        Returns an invalid message error
+        """
+        request, response = self.app.test_client.post(
+            "/webhooks/turn/webhook", json={"messages": [{"type": "invalid"}]},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json, {"success": False, "error": "invalid_message"})

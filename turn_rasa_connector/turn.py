@@ -1,6 +1,7 @@
 import base64
 import hmac
 import logging
+from asyncio import wait
 from typing import Any, Awaitable, Callable, Dict, Optional, Text
 
 from rasa.core.channels import InputChannel, UserMessage
@@ -61,6 +62,13 @@ class TurnInput(InputChannel):
                     {"success": False, "error": "invalid_body"}, status=400
                 )
 
+            user_messages = list(map(self.extract_message, messages))
+            if not all(user_messages):
+                return response.json(
+                    {"success": False, "error": "invalid_message"}, status=400
+                )
+
+            await wait(list(map(on_new_message, user_messages)))
             return response.json({"success": True})
 
         return turn_webhook
@@ -71,3 +79,25 @@ class TurnInput(InputChannel):
         decoded_signature = base64.b64decode(signature)
         digest = hmac.digest(decoded_secret, payload, "sha256")
         return hmac.compare_digest(digest, decoded_signature)
+
+    def extract_message(self, message: dict) -> UserMessage:
+        try:
+            message_type = message.pop("type")
+            handler = getattr(self, f"handle_{message_type}")
+            return handler(message)
+        except (TypeError, KeyError, AttributeError):
+            return None
+
+    def handle_text(self, message: dict) -> UserMessage:
+        try:
+            return UserMessage(
+                text=message.pop("text")["body"],
+                # TODO: Create output channel for responses
+                output_channel=None,
+                sender_id=message.pop("from"),
+                input_channel=self.name(),
+                message_id=message.pop("id"),
+                metadata=message,
+            )
+        except (TypeError, KeyError):
+            return None
