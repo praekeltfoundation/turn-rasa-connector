@@ -46,4 +46,5 @@ jobs:
     - name: Test
       run: py.test
     - name: Upload coverage
-      uses: codecov/codecov-action@v1
+      if: matrix.python-version == 3.6
+      uses: coverallsapp/github-action@master
