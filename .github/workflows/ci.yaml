@@ -49,5 +49,5 @@ jobs:
       if: matrix.python-version == 3.6
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALL_TOKEN }}
-        run: |
-          coveralls
+      run: |
+        coveralls
