@@ -6,6 +6,10 @@ from turn_rasa_connector.turn import TurnInput
 
 
 class TurnInputTests(TestCase):
+    def setUp(self):
+        self.input_channel = self._create_input_channel()
+        self.app = run.configure_app([self.input_channel])
+
     def _create_input_channel(self):
         return TurnInput(hmac_secret="test-secret")
 
@@ -27,8 +31,13 @@ class TurnInputTests(TestCase):
         """
         All routes should be set up correctly
         """
-        input_channel = self._create_input_channel()
-
-        s = run.configure_app([input_channel])
-        routes = utils.list_routes(s)
+        routes = utils.list_routes(self.app)
         self.assertTrue(routes.get("turn_webhook.health").startswith("/webhooks/turn"))
+
+    def test_health(self):
+        """
+        Should return ok status
+        """
+        request, response = self.app.test_client.get("/webhooks/turn")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json, {"status": "ok"})
