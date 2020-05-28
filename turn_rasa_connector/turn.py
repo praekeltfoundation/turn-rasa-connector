@@ -47,9 +47,21 @@ class TurnInput(InputChannel):
                     self.hmac_secret, request.body, signature
                 )
                 if not valid_signature:
-                    return response.json({"error": "invalid_signature"}, status=401)
+                    return response.json(
+                        {"success": False, "error": "invalid_signature"}, status=401
+                    )
             else:
                 logging.warning("hmac_secret config not set, not validating signature")
+
+            try:
+                messages = request.json["messages"]
+                assert isinstance(messages, list)
+            except (TypeError, KeyError, AssertionError):
+                return response.json(
+                    {"success": False, "error": "invalid_body"}, status=400
+                )
+
+            return response.json({"success": True})
 
         return turn_webhook
 

@@ -67,7 +67,9 @@ class TurnInputTests(TestCase):
 
         request, response = self.app.test_client.post("/webhooks/turn/webhook", json={})
         self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json, {"error": "invalid_signature"})
+        self.assertEqual(
+            response.json, {"error": "invalid_signature", "success": False}
+        )
 
         request, response = self.app.test_client.post(
             "/webhooks/turn/webhook",
@@ -75,4 +77,33 @@ class TurnInputTests(TestCase):
             headers={"X-Turn-Hook-Signature": "aW52YWxpZA=="},
         )
         self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.json, {"error": "invalid_signature"})
+        self.assertEqual(
+            response.json, {"error": "invalid_signature", "success": False}
+        )
+
+    def test_webhook_invalid_body(self):
+        """
+        If the body isn't a valid json object, then we should return an error message
+        """
+        request, response = self.app.test_client.post(
+            "/webhooks/turn/webhook", data="invalid"
+        )
+        self.assertEqual(response.status_code, 400)
+
+        request, response = self.app.test_client.post(
+            "/webhooks/turn/webhook", data="[]"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json, {"error": "invalid_body", "success": False})
+
+        request, response = self.app.test_client.post(
+            "/webhooks/turn/webhook", data="{}"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json, {"error": "invalid_body", "success": False})
+
+        request, response = self.app.test_client.post(
+            "/webhooks/turn/webhook", data='{"messages": "invalid"}'
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json, {"error": "invalid_body", "success": False})
