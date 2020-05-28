@@ -147,3 +147,10 @@ class TurnInputTests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json, {"success": False, "error": "invalid_message"})
+
+    def test_handle_text_invalid(self):
+        """
+        Should return None for invalid messages
+        """
+        msg = self.input_channel.handle_text({})
+        self.assertEqual(msg, None)
