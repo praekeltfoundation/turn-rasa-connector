@@ -48,3 +48,5 @@ jobs:
     - name: Upload coverage
       if: matrix.python-version == 3.6
       uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.COVERALL_TOKEN }}
