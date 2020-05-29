@@ -171,12 +171,10 @@ class TurnInputTests(TestCase):
                 "from": "27820001001",
                 "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
                 "audio": {
-                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d"
-                    "683",
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d",
                     "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
                     "mime_type": "audio/mpeg",
-                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944"
-                    "db",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944",
                 },
                 "timestamp": "1521497954",
                 "type": "audio",
@@ -189,12 +187,10 @@ class TurnInputTests(TestCase):
             message.metadata,
             {
                 "audio": {
-                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d"
-                    "683",
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d",
                     "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
                     "mime_type": "audio/mpeg",
-                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944"
-                    "db",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944",
                 },
                 "timestamp": "1521497954",
             },
@@ -212,12 +208,10 @@ class TurnInputTests(TestCase):
                 "type": "document",
                 "document": {
                     "caption": "80skaraokesonglistartist",
-                    "file": "/usr/local/wamedia/shared/fc233119-733f-49c-bcbd-b2f68f798"
-                    "e33",
+                    "file": "/usr/local/wamedia/shared/fc233119-733f-49c-bcbd-b2f68f79",
                     "id": "fc233119-733f-49c-bcbd-b2f68f798e33",
                     "mime_type": "application/pdf",
-                    "sha256": "3b11fa6ef2bde1dd14726e09d3edaf782120919d06f6484f32d5d5ca"
-                    "a4b8e",
+                    "sha256": "3b11fa6ef2bde1dd14726e09d3edaf782120919d06f6484f32d5d5c",
                 },
             }
         )
@@ -228,12 +222,10 @@ class TurnInputTests(TestCase):
             message.metadata,
             {
                 "document": {
-                    "file": "/usr/local/wamedia/shared/fc233119-733f-49c-bcbd-b2f68f798"
-                    "e33",
+                    "file": "/usr/local/wamedia/shared/fc233119-733f-49c-bcbd-b2f68f79",
                     "id": "fc233119-733f-49c-bcbd-b2f68f798e33",
                     "mime_type": "application/pdf",
-                    "sha256": "3b11fa6ef2bde1dd14726e09d3edaf782120919d06f6484f32d5d5ca"
-                    "a4b8e",
+                    "sha256": "3b11fa6ef2bde1dd14726e09d3edaf782120919d06f6484f32d5d5c",
                 },
                 "timestamp": "1522189546",
             },
@@ -248,12 +240,10 @@ class TurnInputTests(TestCase):
                 "from": "27820001001",
                 "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
                 "image": {
-                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d6"
-                    "83",
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d",
                     "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
                     "mime_type": "image/jpeg",
-                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944d"
-                    "b",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944",
                     "caption": "Check out my new phone!",
                 },
                 "timestamp": "1521497954",
@@ -267,12 +257,10 @@ class TurnInputTests(TestCase):
             message.metadata,
             {
                 "image": {
-                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d6"
-                    "83",
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d",
                     "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
                     "mime_type": "image/jpeg",
-                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944d"
-                    "b",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944",
                 },
                 "timestamp": "1521497954",
             },
@@ -287,12 +275,10 @@ class TurnInputTests(TestCase):
                 "from": "27820001001",
                 "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
                 "video": {
-                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d6"
-                    "83",
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d",
                     "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
                     "mime_type": "video/mp4",
-                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944d"
-                    "b",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944",
                     "caption": "Check out my new phone!",
                 },
                 "timestamp": "1521497954",
@@ -306,12 +292,10 @@ class TurnInputTests(TestCase):
             message.metadata,
             {
                 "video": {
-                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d6"
-                    "83",
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d",
                     "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
                     "mime_type": "video/mp4",
-                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944d"
-                    "b",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944",
                 },
                 "timestamp": "1521497954",
             },
@@ -328,12 +312,10 @@ class TurnInputTests(TestCase):
                 "timestamp": "1521827831",
                 "type": "voice",
                 "voice": {
-                    "file": "/usr/local/wamedia/shared/463e/b7ec/ff4e4d9bb1101879cbd411"
-                    "b2",
+                    "file": "/usr/local/wamedia/shared/463e/b7ec/ff4e4d9bb1101879cbd41",
                     "id": "463eb7ec-ff4e-4d9b-b110-1879cbd411b2",
                     "mime_type": "audio/ogg; codecs=opus",
-                    "sha256": "fa9e1807d936b7cebe63654ea3a7912b1fa9479220258d823590521e"
-                    "f53b0710",
+                    "sha256": "fa9e1807d936b7cebe63654ea3a7912b1fa9479220258d823590521",
                 },
             }
         )
@@ -344,13 +326,101 @@ class TurnInputTests(TestCase):
             message.metadata,
             {
                 "voice": {
-                    "file": "/usr/local/wamedia/shared/463e/b7ec/ff4e4d9bb1101879cbd411"
-                    "b2",
+                    "file": "/usr/local/wamedia/shared/463e/b7ec/ff4e4d9bb1101879cbd41",
                     "id": "463eb7ec-ff4e-4d9b-b110-1879cbd411b2",
                     "mime_type": "audio/ogg; codecs=opus",
-                    "sha256": "fa9e1807d936b7cebe63654ea3a7912b1fa9479220258d823590521e"
-                    "f53b0710",
+                    "sha256": "fa9e1807d936b7cebe63654ea3a7912b1fa9479220258d823590521",
                 },
                 "timestamp": "1521827831",
+            },
+        )
+
+    def test_handle_contacts(self):
+        """
+        Returns a UserMessage with valid parameters
+        """
+        message = self.input_channel.extract_message(
+            {
+                "contacts": [
+                    {
+                        "addresses": [
+                            {
+                                "city": "Menlo Park",
+                                "country": "United States",
+                                "country_code": "us",
+                                "state": "CA",
+                                "street": "1 Hacker Way",
+                                "type": "WORK",
+                                "zip": "94025",
+                            }
+                        ],
+                        "birthday": "2012-08-18",
+                        "contact_image": "/9j/4AAQSkZJRgABAQEAZABkAAD/2wBDAAgGBgcGBQgH",
+                        "emails": [{"email": "kfish@fb.com", "type": "WORK"}],
+                        "ims": [{"service": "AIM", "user_id": "kfish"}],
+                        "name": {
+                            "first_name": "Kerry",
+                            "formatted_name": "Kerry Fisher",
+                            "last_name": "Fisher",
+                        },
+                        "org": {"company": "Facebook"},
+                        "phones": [
+                            {"phone": "+1 (940) 555-1234", "type": "CELL"},
+                            {
+                                "phone": "+1 (650) 555-1234",
+                                "type": "WORK",
+                                "wa_id": "16505551234",
+                            },
+                        ],
+                        "urls": [{"url": "https://www.facebook.com", "type": "WORK"}],
+                    }
+                ],
+                "from": "16505551234",
+                "id": "ABGGFlA4dSRvAgo6C4Z53hMh1ugR",
+                "timestamp": "1537248012",
+                "type": "contacts",
+            }
+        )
+        self.assertEqual(message.text, None)
+        self.assertEqual(message.sender_id, "16505551234")
+        self.assertEqual(message.message_id, "ABGGFlA4dSRvAgo6C4Z53hMh1ugR")
+        self.assertEqual(
+            message.metadata,
+            {
+                "contacts": [
+                    {
+                        "addresses": [
+                            {
+                                "city": "Menlo Park",
+                                "country": "United States",
+                                "country_code": "us",
+                                "state": "CA",
+                                "street": "1 Hacker Way",
+                                "type": "WORK",
+                                "zip": "94025",
+                            }
+                        ],
+                        "birthday": "2012-08-18",
+                        "contact_image": "/9j/4AAQSkZJRgABAQEAZABkAAD/2wBDAAgGBgcGBQgH",
+                        "emails": [{"email": "kfish@fb.com", "type": "WORK"}],
+                        "ims": [{"service": "AIM", "user_id": "kfish"}],
+                        "name": {
+                            "first_name": "Kerry",
+                            "formatted_name": "Kerry Fisher",
+                            "last_name": "Fisher",
+                        },
+                        "org": {"company": "Facebook"},
+                        "phones": [
+                            {"phone": "+1 (940) 555-1234", "type": "CELL"},
+                            {
+                                "phone": "+1 (650) 555-1234",
+                                "type": "WORK",
+                                "wa_id": "16505551234",
+                            },
+                        ],
+                        "urls": [{"url": "https://www.facebook.com", "type": "WORK"}],
+                    }
+                ],
+                "timestamp": "1537248012",
             },
         )

@@ -137,7 +137,19 @@ class TurnInput(InputChannel):
         return self.handle_media("voice", message)
 
     def handle_contacts(self, message: dict) -> UserMessage:
-        raise NotImplementedError
+        try:
+            return UserMessage(
+                text=None,
+                # TODO: Create output channel for responses
+                output_channel=None,
+                sender_id=message.pop("from"),
+                input_channel=self.name(),
+                message_id=message.pop("id"),
+                metadata=message,
+            )
+        except (TypeError, KeyError):
+            logger.warning(f"Invalid message: {json.dumps(message)}")
+            return None
 
     def handle_location(self, message: dict) -> UserMessage:
         raise NotImplementedError
