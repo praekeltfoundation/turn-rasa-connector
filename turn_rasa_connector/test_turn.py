@@ -154,3 +154,203 @@ class TurnInputTests(TestCase):
         """
         msg = self.input_channel.handle_text({})
         self.assertEqual(msg, None)
+
+    def test_invalid_media_message(self):
+        """
+        Should return None for invalid media messages
+        """
+        msg = self.input_channel.extract_message({"type": "image"})
+        self.assertEqual(msg, None)
+
+    def test_handle_audio(self):
+        """
+        Returns a UserMesssage with valid parameters
+        """
+        message = self.input_channel.extract_message(
+            {
+                "from": "27820001001",
+                "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                "audio": {
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d"
+                    "683",
+                    "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
+                    "mime_type": "audio/mpeg",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944"
+                    "db",
+                },
+                "timestamp": "1521497954",
+                "type": "audio",
+            }
+        )
+        self.assertEqual(message.text, None)
+        self.assertEqual(message.sender_id, "27820001001")
+        self.assertEqual(message.message_id, "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
+        self.assertEqual(
+            message.metadata,
+            {
+                "audio": {
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d"
+                    "683",
+                    "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
+                    "mime_type": "audio/mpeg",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944"
+                    "db",
+                },
+                "timestamp": "1521497954",
+            },
+        )
+
+    def test_handle_document(self):
+        """
+        Returns a UserMessage with valid parameters
+        """
+        message = self.input_channel.extract_message(
+            {
+                "from": "27820001001",
+                "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                "timestamp": "1522189546",
+                "type": "document",
+                "document": {
+                    "caption": "80skaraokesonglistartist",
+                    "file": "/usr/local/wamedia/shared/fc233119-733f-49c-bcbd-b2f68f798"
+                    "e33",
+                    "id": "fc233119-733f-49c-bcbd-b2f68f798e33",
+                    "mime_type": "application/pdf",
+                    "sha256": "3b11fa6ef2bde1dd14726e09d3edaf782120919d06f6484f32d5d5ca"
+                    "a4b8e",
+                },
+            }
+        )
+        self.assertEqual(message.text, "80skaraokesonglistartist")
+        self.assertEqual(message.sender_id, "27820001001")
+        self.assertEqual(message.message_id, "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
+        self.assertEqual(
+            message.metadata,
+            {
+                "document": {
+                    "file": "/usr/local/wamedia/shared/fc233119-733f-49c-bcbd-b2f68f798"
+                    "e33",
+                    "id": "fc233119-733f-49c-bcbd-b2f68f798e33",
+                    "mime_type": "application/pdf",
+                    "sha256": "3b11fa6ef2bde1dd14726e09d3edaf782120919d06f6484f32d5d5ca"
+                    "a4b8e",
+                },
+                "timestamp": "1522189546",
+            },
+        )
+
+    def test_handle_image(self):
+        """
+        Returns a UserMessage with valid parameters
+        """
+        message = self.input_channel.extract_message(
+            {
+                "from": "27820001001",
+                "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                "image": {
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d6"
+                    "83",
+                    "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
+                    "mime_type": "image/jpeg",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944d"
+                    "b",
+                    "caption": "Check out my new phone!",
+                },
+                "timestamp": "1521497954",
+                "type": "image",
+            }
+        )
+        self.assertEqual(message.text, "Check out my new phone!")
+        self.assertEqual(message.sender_id, "27820001001")
+        self.assertEqual(message.message_id, "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
+        self.assertEqual(
+            message.metadata,
+            {
+                "image": {
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d6"
+                    "83",
+                    "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
+                    "mime_type": "image/jpeg",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944d"
+                    "b",
+                },
+                "timestamp": "1521497954",
+            },
+        )
+
+    def test_handle_video(self):
+        """
+        Returns a UserMessage with valid parameters
+        """
+        message = self.input_channel.extract_message(
+            {
+                "from": "27820001001",
+                "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                "video": {
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d6"
+                    "83",
+                    "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
+                    "mime_type": "video/mp4",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944d"
+                    "b",
+                    "caption": "Check out my new phone!",
+                },
+                "timestamp": "1521497954",
+                "type": "video",
+            }
+        )
+        self.assertEqual(message.text, "Check out my new phone!")
+        self.assertEqual(message.sender_id, "27820001001")
+        self.assertEqual(message.message_id, "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
+        self.assertEqual(
+            message.metadata,
+            {
+                "video": {
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d6"
+                    "83",
+                    "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
+                    "mime_type": "video/mp4",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944d"
+                    "b",
+                },
+                "timestamp": "1521497954",
+            },
+        )
+
+    def test_handle_voice(self):
+        """
+        Returns a UserMessage with valid parameters
+        """
+        message = self.input_channel.extract_message(
+            {
+                "from": "27820001001",
+                "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                "timestamp": "1521827831",
+                "type": "voice",
+                "voice": {
+                    "file": "/usr/local/wamedia/shared/463e/b7ec/ff4e4d9bb1101879cbd411"
+                    "b2",
+                    "id": "463eb7ec-ff4e-4d9b-b110-1879cbd411b2",
+                    "mime_type": "audio/ogg; codecs=opus",
+                    "sha256": "fa9e1807d936b7cebe63654ea3a7912b1fa9479220258d823590521e"
+                    "f53b0710",
+                },
+            }
+        )
+        self.assertEqual(message.text, None)
+        self.assertEqual(message.sender_id, "27820001001")
+        self.assertEqual(message.message_id, "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
+        self.assertEqual(
+            message.metadata,
+            {
+                "voice": {
+                    "file": "/usr/local/wamedia/shared/463e/b7ec/ff4e4d9bb1101879cbd411"
+                    "b2",
+                    "id": "463eb7ec-ff4e-4d9b-b110-1879cbd411b2",
+                    "mime_type": "audio/ogg; codecs=opus",
+                    "sha256": "fa9e1807d936b7cebe63654ea3a7912b1fa9479220258d823590521e"
+                    "f53b0710",
+                },
+                "timestamp": "1521827831",
+            },
+        )

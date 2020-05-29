@@ -1,5 +1,6 @@
 import base64
 import hmac
+import json
 import logging
 from asyncio import wait
 from typing import Any, Awaitable, Callable, Dict, Optional, Text
@@ -81,11 +82,13 @@ class TurnInput(InputChannel):
         return hmac.compare_digest(digest, decoded_signature)
 
     def extract_message(self, message: dict) -> UserMessage:
+        message_type = None
         try:
             message_type = message.pop("type")
             handler = getattr(self, f"handle_{message_type}")
             return handler(message)
         except (TypeError, KeyError, AttributeError):
+            logger.warning(f"Invalid message type: {message_type}")
             return None
 
     def handle_text(self, message: dict) -> UserMessage:
@@ -100,4 +103,41 @@ class TurnInput(InputChannel):
                 metadata=message,
             )
         except (TypeError, KeyError):
+            logger.warning(f"Invalid message: {json.dumps(message)}")
             return None
+
+    def handle_media(self, media_type: str, message: dict) -> UserMessage:
+        try:
+            return UserMessage(
+                text=message[media_type].pop("caption", None),
+                # TODO: Create output channel for responses
+                output_channel=None,
+                sender_id=message.pop("from"),
+                input_channel=self.name(),
+                message_id=message.pop("id"),
+                metadata=message,
+            )
+        except (TypeError, KeyError):
+            logger.warning(f"Invalid message: {json.dumps(message)}")
+            return None
+
+    def handle_audio(self, message: dict) -> UserMessage:
+        return self.handle_media("audio", message)
+
+    def handle_document(self, message: dict) -> UserMessage:
+        return self.handle_media("document", message)
+
+    def handle_image(self, message: dict) -> UserMessage:
+        return self.handle_media("image", message)
+
+    def handle_video(self, message: dict) -> UserMessage:
+        return self.handle_media("video", message)
+
+    def handle_voice(self, message: dict) -> UserMessage:
+        return self.handle_media("voice", message)
+
+    def handle_contacts(self, message: dict) -> UserMessage:
+        raise NotImplementedError
+
+    def handle_location(self, message: dict) -> UserMessage:
+        raise NotImplementedError
