@@ -63,11 +63,15 @@ class TurnInput(InputChannel):
                     {"success": False, "error": "invalid_body"}, status=400
                 )
 
-            user_messages = list(map(self.extract_message, messages))
-            if not all(user_messages):
-                return response.json(
-                    {"success": False, "error": "invalid_message"}, status=400
-                )
+            user_messages = []
+            for message in messages:
+                try:
+                    user_messages.append(self.extract_message(message))
+                except (TypeError, KeyError, AttributeError):
+                    logger.warning(f"Invalid message: {json.dumps(message)}")
+                    return response.json(
+                        {"success": False, "error": "invalid_message"}, status=400
+                    )
 
             await wait(list(map(on_new_message, user_messages)))
             return response.json({"success": True})
@@ -82,44 +86,26 @@ class TurnInput(InputChannel):
         return hmac.compare_digest(digest, decoded_signature)
 
     def extract_message(self, message: dict) -> UserMessage:
-        message_type = None
-        try:
-            message_type = message["type"]
-            handler = getattr(self, f"handle_{message_type}")
-            return handler(message)
-        except (TypeError, KeyError, AttributeError):
-            logger.warning(f"Invalid message type: {message_type}")
-            return None
+        message_type = message["type"]
+        handler = getattr(self, f"handle_{message_type}")
+        return handler(message)
+
+    def handle_common(self, text: Optional[str], message: dict) -> UserMessage:
+        return UserMessage(
+            text=text,
+            # TODO: Create output channel for responses
+            output_channel=None,
+            sender_id=message.pop("from"),
+            input_channel=self.name(),
+            message_id=message.pop("id"),
+            metadata=message,
+        )
 
     def handle_text(self, message: dict) -> UserMessage:
-        try:
-            return UserMessage(
-                text=message.pop("text")["body"],
-                # TODO: Create output channel for responses
-                output_channel=None,
-                sender_id=message.pop("from"),
-                input_channel=self.name(),
-                message_id=message.pop("id"),
-                metadata=message,
-            )
-        except (TypeError, KeyError):
-            logger.warning(f"Invalid message: {json.dumps(message)}")
-            return None
+        return self.handle_common(message.pop("text")["body"], message)
 
     def handle_media(self, media_type: str, message: dict) -> UserMessage:
-        try:
-            return UserMessage(
-                text=message[media_type].pop("caption", None),
-                # TODO: Create output channel for responses
-                output_channel=None,
-                sender_id=message.pop("from"),
-                input_channel=self.name(),
-                message_id=message.pop("id"),
-                metadata=message,
-            )
-        except (TypeError, KeyError):
-            logger.warning(f"Invalid message: {json.dumps(message)}")
-            return None
+        return self.handle_common(message[media_type].pop("caption", None), message)
 
     def handle_audio(self, message: dict) -> UserMessage:
         return self.handle_media("audio", message)
@@ -137,31 +123,7 @@ class TurnInput(InputChannel):
         return self.handle_media("voice", message)
 
     def handle_contacts(self, message: dict) -> UserMessage:
-        try:
-            return UserMessage(
-                text=None,
-                # TODO: Create output channel for responses
-                output_channel=None,
-                sender_id=message.pop("from"),
-                input_channel=self.name(),
-                message_id=message.pop("id"),
-                metadata=message,
-            )
-        except (TypeError, KeyError):
-            logger.warning(f"Invalid message: {json.dumps(message)}")
-            return None
+        return self.handle_common(None, message)
 
     def handle_location(self, message: dict) -> UserMessage:
-        try:
-            return UserMessage(
-                text=None,
-                # TODO: Create output channel for responses
-                output_channel=None,
-                sender_id=message.pop("from"),
-                input_channel=self.name(),
-                message_id=message.pop("id"),
-                metadata=message,
-            )
-        except (TypeError, KeyError):
-            logger.warning(f"Invalid message: {json.dumps(message)}")
-            return None
+        return self.handle_common(None, message)

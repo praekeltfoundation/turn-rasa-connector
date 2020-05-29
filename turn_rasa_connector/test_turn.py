@@ -148,20 +148,6 @@ class TurnInputTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json, {"success": False, "error": "invalid_message"})
 
-    def test_handle_text_invalid(self):
-        """
-        Should return None for invalid messages
-        """
-        msg = self.input_channel.handle_text({})
-        self.assertEqual(msg, None)
-
-    def test_invalid_media_message(self):
-        """
-        Should return None for invalid media messages
-        """
-        msg = self.input_channel.extract_message({"type": "image"})
-        self.assertEqual(msg, None)
-
     def test_handle_audio(self):
         """
         Returns a UserMesssage with valid parameters
