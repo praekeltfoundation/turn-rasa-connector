@@ -84,7 +84,7 @@ class TurnInput(InputChannel):
     def extract_message(self, message: dict) -> UserMessage:
         message_type = None
         try:
-            message_type = message.pop("type")
+            message_type = message["type"]
             handler = getattr(self, f"handle_{message_type}")
             return handler(message)
         except (TypeError, KeyError, AttributeError):
@@ -152,4 +152,16 @@ class TurnInput(InputChannel):
             return None
 
     def handle_location(self, message: dict) -> UserMessage:
-        raise NotImplementedError
+        try:
+            return UserMessage(
+                text=None,
+                # TODO: Create output channel for responses
+                output_channel=None,
+                sender_id=message.pop("from"),
+                input_channel=self.name(),
+                message_id=message.pop("id"),
+                metadata=message,
+            )
+        except (TypeError, KeyError):
+            logger.warning(f"Invalid message: {json.dumps(message)}")
+            return None

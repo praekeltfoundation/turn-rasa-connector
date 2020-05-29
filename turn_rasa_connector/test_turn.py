@@ -136,7 +136,7 @@ class TurnInputTests(TestCase):
         self.assertEqual(message.text, "message body")
         self.assertEqual(message.sender_id, "27820001001")
         self.assertEqual(message.message_id, "message-id")
-        self.assertEqual(message.metadata, {"timestamp": "1518694235"})
+        self.assertEqual(message.metadata, {"timestamp": "1518694235", "type": "text"})
 
     def test_webhook_handle_invalid_messages(self):
         """
@@ -193,6 +193,7 @@ class TurnInputTests(TestCase):
                     "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944",
                 },
                 "timestamp": "1521497954",
+                "type": "audio",
             },
         )
 
@@ -228,6 +229,7 @@ class TurnInputTests(TestCase):
                     "sha256": "3b11fa6ef2bde1dd14726e09d3edaf782120919d06f6484f32d5d5c",
                 },
                 "timestamp": "1522189546",
+                "type": "document",
             },
         )
 
@@ -263,6 +265,7 @@ class TurnInputTests(TestCase):
                     "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944",
                 },
                 "timestamp": "1521497954",
+                "type": "image",
             },
         )
 
@@ -298,6 +301,7 @@ class TurnInputTests(TestCase):
                     "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944",
                 },
                 "timestamp": "1521497954",
+                "type": "video",
             },
         )
 
@@ -332,6 +336,7 @@ class TurnInputTests(TestCase):
                     "sha256": "fa9e1807d936b7cebe63654ea3a7912b1fa9479220258d823590521",
                 },
                 "timestamp": "1521827831",
+                "type": "voice",
             },
         )
 
@@ -422,5 +427,43 @@ class TurnInputTests(TestCase):
                     }
                 ],
                 "timestamp": "1537248012",
+                "type": "contacts",
+            },
+        )
+
+    def test_handle_location(self):
+        """
+        Returns a UserMessage with valid parameters
+        """
+        message = self.input_channel.extract_message(
+            {
+                "from": "16315551234",
+                "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                "location": {
+                    "address": "Main Street Beach, Santa Cruz, CA",
+                    "latitude": 38.9806263495,
+                    "longitude": -131.9428612257,
+                    "name": "Main Street Beach",
+                    "url": "https://foursquare.com/v/4d7031d35b5df7744",
+                },
+                "timestamp": "1521497875",
+                "type": "location",
+            }
+        )
+        self.assertEqual(message.text, None)
+        self.assertEqual(message.sender_id, "16315551234")
+        self.assertEqual(message.message_id, "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
+        self.assertEqual(
+            message.metadata,
+            {
+                "location": {
+                    "address": "Main Street Beach, Santa Cruz, CA",
+                    "latitude": 38.9806263495,
+                    "longitude": -131.9428612257,
+                    "name": "Main Street Beach",
+                    "url": "https://foursquare.com/v/4d7031d35b5df7744",
+                },
+                "timestamp": "1521497875",
+                "type": "location",
             },
         )
