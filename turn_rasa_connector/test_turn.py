@@ -555,6 +555,15 @@ async def test_send_image_message(turn_mock_server: Sanic):
     assert media.body == b"testimagecontent"
     assert media.headers["Content-Type"] == "image/jpeg"
 
+    await output_channel.send_response(
+        "27820001001",
+        {
+            "image": f"http://{turn_mock_server.host}:{turn_mock_server.port}"
+            "/images/image.jpg"
+        },
+    )
+    assert len(turn_mock_server.app.media) == 1
+
 
 @pytest.mark.asyncio
 async def test_send_text_with_buttons_message(turn_mock_server: Sanic):

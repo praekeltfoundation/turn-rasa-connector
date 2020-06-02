@@ -3,11 +3,11 @@ import hmac
 import json
 import logging
 from asyncio import wait
-from functools import lru_cache
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Text
 from urllib.parse import urljoin
 
 import httpx
+from async_lru import alru_cache
 from rasa.cli import utils as cli_utils
 from rasa.core.channels import InputChannel, OutputChannel, UserMessage
 from sanic import Blueprint, response
@@ -17,7 +17,7 @@ from sanic.response import HTTPResponse
 logger = logging.getLogger(__name__)
 
 
-@lru_cache(maxsize=None)
+@alru_cache(maxsize=None)
 async def get_media_id(turn_url: Text, turn_token: Text, url: Text):
     # TODO: Respect the caching headers from the URL, rather than indefinitely caching
     async with httpx.stream("GET", url) as image_response:

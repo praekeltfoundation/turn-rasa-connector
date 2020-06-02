@@ -29,5 +29,5 @@ setup(
         "issues",
         "Source Code": "https://github.com/praekeltfoundation/turn-rasa-connector",
     },
-    install_requires=["rasa"],
+    install_requires=["rasa", "async_lru"],
 )
