@@ -29,15 +29,28 @@ class TurnOutput(OutputChannel):
         self.token = token
         super().__init__()
 
-    async def send_text_message(
-        self, recipient_id: Text, text: Text, **kwargs: Any
-    ) -> None:
+    async def _send_message(self, body: dict):
         result = await httpx.post(
             urljoin(self.url, "/v1/messages"),
             headers={"Authorization": f"Bearer {self.token}"},
-            json={"to": recipient_id, "type": "text", "text": {"body": text}},
+            json=body,
         )
         result.raise_for_status()
+
+    async def send_text_message(
+        self, recipient_id: Text, text: Text, **kwargs: Any
+    ) -> None:
+        await self._send_message(
+            {"to": recipient_id, "type": "text", "text": {"body": text}}
+        )
+
+    async def send_image_url(
+        self, recipient_id: Text, image: Text, **kwargs: Any
+    ) -> None:
+        # TODO: Use media ID instead of image URL
+        await self._send_message(
+            {"to": recipient_id, "type": "image", "image": {"link": image}}
+        )
 
 
 class TurnInput(InputChannel):
