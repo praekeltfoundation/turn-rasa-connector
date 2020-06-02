@@ -149,7 +149,9 @@ class TurnInput(InputChannel):
                         {"success": False, "error": "invalid_message"}, status=400
                     )
 
-            await wait(list(map(on_new_message, user_messages)))
+            if user_messages:
+                # wait doesn't like empty lists
+                await wait(list(map(on_new_message, user_messages)))
             return response.json({"success": True})
 
         return turn_webhook
