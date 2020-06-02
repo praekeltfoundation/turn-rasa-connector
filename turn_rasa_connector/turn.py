@@ -4,13 +4,40 @@ import json
 import logging
 from asyncio import wait
 from typing import Any, Awaitable, Callable, Dict, Optional, Text
+from urllib.parse import urljoin
 
-from rasa.core.channels import InputChannel, UserMessage
+import httpx
+from rasa.core.channels import InputChannel, OutputChannel, UserMessage
 from sanic import Blueprint, response
 from sanic.request import Request
 from sanic.response import HTTPResponse
 
 logger = logging.getLogger(__name__)
+
+
+class TurnOutput(OutputChannel):
+    """
+    Turn output channel
+    """
+
+    @classmethod
+    def name(cls) -> Text:
+        return "turn"
+
+    def __init__(self, url: Text, token: Text):
+        self.url = url
+        self.token = token
+        super().__init__()
+
+    async def send_text_message(
+        self, recipient_id: Text, text: Text, **kwargs: Any
+    ) -> None:
+        result = await httpx.post(
+            urljoin(self.url, "/v1/messages"),
+            headers={"Authorization": f"Bearer {self.token}"},
+            json={"to": recipient_id, "type": "text", "text": {"body": text}},
+        )
+        result.raise_for_status()
 
 
 class TurnInput(InputChannel):
@@ -27,10 +54,14 @@ class TurnInput(InputChannel):
         if not credentials:
             cls.raise_missing_credentials_exception()
 
-        return cls(credentials.get("hmac_secret"))
+        return cls(
+            credentials.get("hmac_secret"), credentials["url"], credentials["token"]
+        )
 
-    def __init__(self, hmac_secret: Optional[Text]) -> None:
+    def __init__(self, hmac_secret: Optional[Text], url: Text, token: Text) -> None:
         self.hmac_secret = hmac_secret
+        self.url = url
+        self.token = token
 
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
@@ -93,8 +124,7 @@ class TurnInput(InputChannel):
     def handle_common(self, text: Optional[str], message: dict) -> UserMessage:
         return UserMessage(
             text=text,
-            # TODO: Create output channel for responses
-            output_channel=None,
+            output_channel=self.get_output_channel(),
             sender_id=message.pop("from"),
             input_channel=self.name(),
             message_id=message.pop("id"),
@@ -127,3 +157,6 @@ class TurnInput(InputChannel):
 
     def handle_location(self, message: dict) -> UserMessage:
         return self.handle_common(None, message)
+
+    def get_output_channel(self) -> OutputChannel:
+        return TurnOutput(self.url, self.token)
