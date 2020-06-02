@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 @lru_cache(maxsize=None)
 async def get_media_id(turn_url: Text, turn_token: Text, url: Text):
+    # TODO: Respect the caching headers from the URL, rather than indefinitely caching
     async with httpx.stream("GET", url) as image_response:
         image_response.raise_for_status()
         turn_response = await httpx.post(
