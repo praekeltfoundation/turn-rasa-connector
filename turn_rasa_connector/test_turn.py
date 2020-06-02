@@ -1,8 +1,11 @@
 from unittest import TestCase, mock
 
+import pytest
 from rasa.core import run, utils
+from sanic import Sanic
+from sanic.response import json
 
-from turn_rasa_connector.turn import TurnInput
+from turn_rasa_connector.turn import TurnInput, TurnOutput
 
 
 class TurnInputTests(TestCase):
@@ -10,15 +13,21 @@ class TurnInputTests(TestCase):
         self.input_channel = self._create_input_channel()
         self.app = run.configure_app([self.input_channel])
 
-    def _create_input_channel(self, hmac_secret=None):
-        return TurnInput(hmac_secret=hmac_secret)
+    def _create_input_channel(
+        self, hmac_secret=None, url="https://turn", token="testtoken"
+    ):
+        return TurnInput(hmac_secret=hmac_secret, url=url, token=token)
 
     def test_from_credentials(self):
         """
         Stores the credentials on the class
         """
-        instance = TurnInput.from_credentials({"hmac_secret": "test-secret"})
+        instance = TurnInput.from_credentials(
+            {"hmac_secret": "test-secret", "url": "https://turn", "token": "testtoken"}
+        )
         self.assertEqual(instance.hmac_secret, "test-secret")
+        self.assertEqual(instance.url, "https://turn")
+        self.assertEqual(instance.token, "testtoken")
 
     def test_no_credentials(self):
         """
@@ -453,3 +462,107 @@ class TurnInputTests(TestCase):
                 "type": "location",
             },
         )
+
+
+def test_output_channel_name():
+    """
+    Test that the output channel's name is correct
+    """
+    output_channel = TurnOutput(url="https://turn", token="testtoken")
+    assert output_channel.name() == "turn"
+
+
+@pytest.fixture
+def turn_mock_server(loop, test_client):
+    app = Sanic("mock_turn")
+    app.messages = []
+
+    @app.route("/v1/messages", methods=["POST"])
+    async def messages(request):
+        app.messages.append(request)
+        return json({})
+
+    return loop.run_until_complete(test_client(app))
+
+
+@pytest.mark.asyncio
+async def test_send_text_message(turn_mock_server: Sanic):
+    """
+    Makes an HTTP request to Turn to send the message
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}", token="testtoken"
+    )
+    await output_channel.send_response("27820001001", {"text": "test message"})
+    [message] = turn_mock_server.app.messages
+    assert message.json == {
+        "to": "27820001001",
+        "type": "text",
+        "text": {"body": "test message"},
+    }
+    assert message.headers["Authorization"] == "Bearer testtoken"
+    assert message.headers["Content-Type"] == "application/json"
+
+
+@pytest.mark.asyncio
+async def test_send_image_message(turn_mock_server: Sanic):
+    """
+    Makes an HTTP request to Turn to send the message
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}", token="testtoken"
+    )
+    await output_channel.send_response(
+        "27820001001", {"image": "https://example.org/image.jpg"}
+    )
+    [message] = turn_mock_server.app.messages
+    assert message.json == {
+        "to": "27820001001",
+        "type": "image",
+        "image": {"link": "https://example.org/image.jpg"},
+    }
+    assert message.headers["Authorization"] == "Bearer testtoken"
+    assert message.headers["Content-Type"] == "application/json"
+
+
+@pytest.mark.asyncio
+async def test_send_text_with_buttons_message(turn_mock_server: Sanic):
+    """
+    Makes an HTTP request to Turn to send the message
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}", token="testtoken"
+    )
+    await output_channel.send_response(
+        "27820001001",
+        {"text": "test message", "buttons": [{"title": "item1"}, {"title": "item2"}]},
+    )
+    [message] = turn_mock_server.app.messages
+    assert message.json == {
+        "to": "27820001001",
+        "type": "text",
+        "text": {"body": "test message\n1: item1\n2: item2"},
+    }
+    assert message.headers["Authorization"] == "Bearer testtoken"
+    assert message.headers["Content-Type"] == "application/json"
+
+
+@pytest.mark.asyncio
+async def test_send_custom_message(turn_mock_server: Sanic):
+    """
+    Makes an HTTP request to Turn to send the message
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}", token="testtoken"
+    )
+    await output_channel.send_response(
+        "27820001001", {"custom": {"type": "text", "text": {"body": "test message"}}},
+    )
+    [message] = turn_mock_server.app.messages
+    assert message.json == {
+        "to": "27820001001",
+        "type": "text",
+        "text": {"body": "test message"},
+    }
+    assert message.headers["Authorization"] == "Bearer testtoken"
+    assert message.headers["Content-Type"] == "application/json"

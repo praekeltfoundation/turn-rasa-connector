@@ -3,14 +3,78 @@ import hmac
 import json
 import logging
 from asyncio import wait
-from typing import Any, Awaitable, Callable, Dict, Optional, Text
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Text
+from urllib.parse import urljoin
 
-from rasa.core.channels import InputChannel, UserMessage
+import httpx
+from rasa.cli import utils as cli_utils
+from rasa.core.channels import InputChannel, OutputChannel, UserMessage
 from sanic import Blueprint, response
 from sanic.request import Request
 from sanic.response import HTTPResponse
 
 logger = logging.getLogger(__name__)
+
+
+class TurnOutput(OutputChannel):
+    """
+    Turn output channel
+    """
+
+    @classmethod
+    def name(cls) -> Text:
+        return "turn"
+
+    def __init__(self, url: Text, token: Text):
+        self.url = url
+        self.token = token
+        super().__init__()
+
+    async def _send_message(self, body: dict):
+        # TODO: Turn conversation claim handling
+        result = await httpx.post(
+            urljoin(self.url, "/v1/messages"),
+            headers={"Authorization": f"Bearer {self.token}"},
+            json=body,
+        )
+        # TODO: Retries and error handling
+        result.raise_for_status()
+
+    async def send_text_message(
+        self, recipient_id: Text, text: Text, **kwargs: Any
+    ) -> None:
+        await self._send_message(
+            {"to": recipient_id, "type": "text", "text": {"body": text}}
+        )
+
+    async def send_image_url(
+        self, recipient_id: Text, image: Text, **kwargs: Any
+    ) -> None:
+        # TODO: Use media ID instead of image URL
+        await self._send_message(
+            {"to": recipient_id, "type": "image", "image": {"link": image}}
+        )
+
+    async def send_text_with_buttons(
+        self,
+        recipient_id: Text,
+        text: Text,
+        buttons: List[Dict[Text, Any]],
+        **kwargs: Any,
+    ) -> None:
+        for idx, button in enumerate(buttons):
+            text += "\n"
+            text += cli_utils.button_to_string(button, idx)
+        await self.send_text_message(recipient_id, text, **kwargs)
+
+    async def send_custom_json(
+        self, recipient_id: Text, json_message: Dict[Text, Any], **kwargs: Any
+    ) -> None:
+        json_message["to"] = recipient_id
+        await self._send_message(json_message)
+
+    # TODO: elements message type
+    # TODO: attachment message type
 
 
 class TurnInput(InputChannel):
@@ -27,10 +91,14 @@ class TurnInput(InputChannel):
         if not credentials:
             cls.raise_missing_credentials_exception()
 
-        return cls(credentials.get("hmac_secret"))
+        return cls(
+            credentials.get("hmac_secret"), credentials["url"], credentials["token"]
+        )
 
-    def __init__(self, hmac_secret: Optional[Text]) -> None:
+    def __init__(self, hmac_secret: Optional[Text], url: Text, token: Text) -> None:
         self.hmac_secret = hmac_secret
+        self.url = url
+        self.token = token
 
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
@@ -93,8 +161,7 @@ class TurnInput(InputChannel):
     def handle_common(self, text: Optional[str], message: dict) -> UserMessage:
         return UserMessage(
             text=text,
-            # TODO: Create output channel for responses
-            output_channel=None,
+            output_channel=self.get_output_channel(),
             sender_id=message.pop("from"),
             input_channel=self.name(),
             message_id=message.pop("id"),
@@ -127,3 +194,6 @@ class TurnInput(InputChannel):
 
     def handle_location(self, message: dict) -> UserMessage:
         return self.handle_common(None, message)
+
+    def get_output_channel(self) -> OutputChannel:
+        return TurnOutput(self.url, self.token)
