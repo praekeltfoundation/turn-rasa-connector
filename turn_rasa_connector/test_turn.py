@@ -135,6 +135,7 @@ class TurnInputTests(TestCase):
                     }
                 ]
             },
+            headers={"X-Turn-Claim": "conversation-claim"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json, {"success": True})
@@ -146,6 +147,9 @@ class TurnInputTests(TestCase):
         self.assertEqual(message.sender_id, "27820001001")
         self.assertEqual(message.message_id, "message-id")
         self.assertEqual(message.metadata, {"timestamp": "1518694235", "type": "text"})
+        self.assertEqual(
+            message.output_channel.conversation_claim, "conversation-claim"
+        )
 
     def test_webhook_handle_invalid_messages(self):
         """
