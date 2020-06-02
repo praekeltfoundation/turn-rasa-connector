@@ -129,9 +129,9 @@ class TurnInput(InputChannel):
                 logging.warning("hmac_secret config not set, not validating signature")
 
             try:
-                messages = request.json["messages"]
+                messages = request.json.get("messages", [])
                 assert isinstance(messages, list)
-            except (TypeError, KeyError, AssertionError):
+            except (TypeError, AttributeError, AssertionError):
                 return response.json(
                     {"success": False, "error": "invalid_body"}, status=400
                 )

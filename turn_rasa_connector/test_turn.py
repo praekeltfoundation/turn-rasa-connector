@@ -106,12 +106,6 @@ class TurnInputTests(TestCase):
         self.assertEqual(response.json, {"error": "invalid_body", "success": False})
 
         request, response = self.app.test_client.post(
-            "/webhooks/turn/webhook", data="{}"
-        )
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json, {"error": "invalid_body", "success": False})
-
-        request, response = self.app.test_client.post(
             "/webhooks/turn/webhook", data='{"messages": "invalid"}'
         )
         self.assertEqual(response.status_code, 400)
