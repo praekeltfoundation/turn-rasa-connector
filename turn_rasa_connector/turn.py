@@ -3,6 +3,7 @@ import hmac
 import json
 import logging
 from asyncio import wait
+from functools import lru_cache
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Text
 from urllib.parse import urljoin
 
@@ -14,6 +15,23 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 
 logger = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=None)
+async def get_media_id(turn_url: Text, turn_token: Text, url: Text):
+    async with httpx.stream("GET", url) as image_response:
+        image_response.raise_for_status()
+        turn_response = await httpx.post(
+            urljoin(turn_url, "/v1/media"),
+            headers={
+                "Authorization": f"Bearer {turn_token}",
+                "Content-Type": image_response.headers["Content-Type"],
+            },
+            data=image_response.aiter_bytes(),
+        )
+        turn_response.raise_for_status()
+        response_data: Any = turn_response.json()
+        return response_data["media"][0]["id"]
 
 
 class TurnOutput(OutputChannel):
@@ -55,9 +73,9 @@ class TurnOutput(OutputChannel):
     async def send_image_url(
         self, recipient_id: Text, image: Text, **kwargs: Any
     ) -> None:
-        # TODO: Use media ID instead of image URL
+        media_id = await get_media_id(self.url, self.token, image)
         await self._send_message(
-            {"to": recipient_id, "type": "image", "image": {"link": image}}
+            {"to": recipient_id, "type": "image", "image": {"id": media_id}}
         )
 
     async def send_text_with_buttons(

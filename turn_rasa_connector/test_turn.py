@@ -1,9 +1,9 @@
+import hashlib
 from unittest import TestCase, mock
 
 import pytest
 from rasa.core import run, utils
-from sanic import Sanic
-from sanic.response import json
+from sanic import Sanic, response
 
 from turn_rasa_connector.turn import TurnInput, TurnOutput
 
@@ -474,11 +474,21 @@ def test_output_channel_name():
 def turn_mock_server(loop, sanic_client):
     app = Sanic("mock_turn")
     app.messages = []
+    app.media = []
 
     @app.route("/v1/messages", methods=["POST"])
     async def messages(request):
         app.messages.append(request)
-        return json({})
+        return response.json({})
+
+    @app.route("/v1/media", methods=["POST"])
+    async def media(request):
+        app.media.append(request)
+        return response.json({"media": [{"id": hashlib.md5(request.body).hexdigest()}]})
+
+    @app.route("/images/<image>", methods=["GET"])
+    async def images(request, image):
+        return response.raw(b"testimagecontent", content_type="image/jpeg")
 
     return loop.run_until_complete(sanic_client(app))
 
@@ -526,16 +536,24 @@ async def test_send_image_message(turn_mock_server: Sanic):
         url=f"http://{turn_mock_server.host}:{turn_mock_server.port}", token="testtoken"
     )
     await output_channel.send_response(
-        "27820001001", {"image": "https://example.org/image.jpg"}
+        "27820001001",
+        {
+            "image": f"http://{turn_mock_server.host}:{turn_mock_server.port}"
+            "/images/image.jpg"
+        },
     )
     [message] = turn_mock_server.app.messages
     assert message.json == {
         "to": "27820001001",
         "type": "image",
-        "image": {"link": "https://example.org/image.jpg"},
+        "image": {"id": "b31d776c767e5594f0db4792b8e30c9e"},
     }
     assert message.headers["Authorization"] == "Bearer testtoken"
     assert message.headers["Content-Type"] == "application/json"
+
+    [media] = turn_mock_server.app.media
+    assert media.body == b"testimagecontent"
+    assert media.headers["Content-Type"] == "image/jpeg"
 
 
 @pytest.mark.asyncio
