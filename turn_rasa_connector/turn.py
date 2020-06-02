@@ -25,17 +25,22 @@ class TurnOutput(OutputChannel):
     def name(cls) -> Text:
         return "turn"
 
-    def __init__(self, url: Text, token: Text):
+    def __init__(
+        self, url: Text, token: Text, conversation_claim: Optional[Text] = None
+    ):
         self.url = url
         self.token = token
+        self.conversation_claim = conversation_claim
         super().__init__()
 
     async def _send_message(self, body: dict):
-        # TODO: Turn conversation claim handling
+        headers = {"Authorization": f"Bearer {self.token}"}
+        if self.conversation_claim:
+            # TODO: End conversation claim at end of session
+            headers["X-Turn-Claim-Extend"] = self.conversation_claim
+
         result = await httpx.post(
-            urljoin(self.url, "/v1/messages"),
-            headers={"Authorization": f"Bearer {self.token}"},
-            json=body,
+            urljoin(self.url, "/v1/messages"), headers=headers, json=body,
         )
         # TODO: Retries and error handling
         result.raise_for_status()
@@ -131,9 +136,12 @@ class TurnInput(InputChannel):
                     {"success": False, "error": "invalid_body"}, status=400
                 )
 
+            conversation_claim = request.headers.get("X-Turn-Claim", None)
+
             user_messages = []
             for message in messages:
                 try:
+                    message["conversation_claim"] = conversation_claim
                     user_messages.append(self.extract_message(message))
                 except (TypeError, KeyError, AttributeError):
                     logger.warning(f"Invalid message: {json.dumps(message)}")
@@ -161,7 +169,9 @@ class TurnInput(InputChannel):
     def handle_common(self, text: Optional[str], message: dict) -> UserMessage:
         return UserMessage(
             text=text,
-            output_channel=self.get_output_channel(),
+            output_channel=self.get_output_channel(
+                message.pop("conversation_claim", None)
+            ),
             sender_id=message.pop("from"),
             input_channel=self.name(),
             message_id=message.pop("id"),
@@ -195,5 +205,7 @@ class TurnInput(InputChannel):
     def handle_location(self, message: dict) -> UserMessage:
         return self.handle_common(None, message)
 
-    def get_output_channel(self) -> OutputChannel:
-        return TurnOutput(self.url, self.token)
+    def get_output_channel(
+        self, conversation_claim: Optional[Text] = None
+    ) -> OutputChannel:
+        return TurnOutput(self.url, self.token, conversation_claim)
