@@ -34,11 +34,13 @@ class TurnOutput(OutputChannel):
         super().__init__()
 
     async def _send_message(self, body: dict):
-        # TODO: Turn conversation claim handling
+        headers = {"Authorization": f"Bearer {self.token}"}
+        if self.conversation_claim:
+            # TODO: End conversation claim at end of session
+            headers["X-Turn-Claim-Extend"] = self.conversation_claim
+
         result = await httpx.post(
-            urljoin(self.url, "/v1/messages"),
-            headers={"Authorization": f"Bearer {self.token}"},
-            json=body,
+            urljoin(self.url, "/v1/messages"), headers=headers, json=body,
         )
         # TODO: Retries and error handling
         result.raise_for_status()

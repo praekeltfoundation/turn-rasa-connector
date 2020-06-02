@@ -477,7 +477,7 @@ def test_output_channel_name():
 
 
 @pytest.fixture
-def turn_mock_server(loop, test_client):
+def turn_mock_server(loop, sanic_client):
     app = Sanic("mock_turn")
     app.messages = []
 
@@ -486,7 +486,7 @@ def turn_mock_server(loop, test_client):
         app.messages.append(request)
         return json({})
 
-    return loop.run_until_complete(test_client(app))
+    return loop.run_until_complete(sanic_client(app))
 
 
 @pytest.mark.asyncio
@@ -506,6 +506,21 @@ async def test_send_text_message(turn_mock_server: Sanic):
     }
     assert message.headers["Authorization"] == "Bearer testtoken"
     assert message.headers["Content-Type"] == "application/json"
+
+
+@pytest.mark.asyncio
+async def test_convesation_claim(turn_mock_server: Sanic):
+    """
+    Extends the conversation claim if possible
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}",
+        token="testtoken",
+        conversation_claim="conversation-claim-id",
+    )
+    await output_channel.send_response("27820001001", {"text": "test message"})
+    [message] = turn_mock_server.app.messages
+    assert message.headers["X-Turn-Claim-Extend"] == "conversation-claim-id"
 
 
 @pytest.mark.asyncio
