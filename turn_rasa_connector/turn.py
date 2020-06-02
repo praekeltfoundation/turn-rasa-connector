@@ -31,11 +31,13 @@ class TurnOutput(OutputChannel):
         super().__init__()
 
     async def _send_message(self, body: dict):
+        # TODO: Turn conversation claim handling
         result = await httpx.post(
             urljoin(self.url, "/v1/messages"),
             headers={"Authorization": f"Bearer {self.token}"},
             json=body,
         )
+        # TODO: Retries and error handling
         result.raise_for_status()
 
     async def send_text_message(
@@ -64,6 +66,15 @@ class TurnOutput(OutputChannel):
             text += "\n"
             text += cli_utils.button_to_string(button, idx)
         await self.send_text_message(recipient_id, text, **kwargs)
+
+    async def send_custom_json(
+        self, recipient_id: Text, json_message: Dict[Text, Any], **kwargs: Any
+    ) -> None:
+        json_message["to"] = recipient_id
+        await self._send_message(json_message)
+
+    # TODO: elements message type
+    # TODO: attachment message type
 
 
 class TurnInput(InputChannel):
