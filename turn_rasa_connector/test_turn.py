@@ -523,3 +523,25 @@ async def test_send_image_message(turn_mock_server: Sanic):
     }
     assert message.headers["Authorization"] == "Bearer testtoken"
     assert message.headers["Content-Type"] == "application/json"
+
+
+@pytest.mark.asyncio
+async def test_send_text_with_buttons_message(turn_mock_server: Sanic):
+    """
+    Makes an HTTP request to Turn to send the message
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}", token="testtoken"
+    )
+    await output_channel.send_response(
+        "27820001001",
+        {"text": "test message", "buttons": [{"title": "item1"}, {"title": "item2"}]},
+    )
+    [message] = turn_mock_server.app.messages
+    assert message.json == {
+        "to": "27820001001",
+        "type": "text",
+        "text": {"body": "test message\n1: item1\n2: item2"},
+    }
+    assert message.headers["Authorization"] == "Bearer testtoken"
+    assert message.headers["Content-Type"] == "application/json"

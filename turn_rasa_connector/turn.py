@@ -3,10 +3,11 @@ import hmac
 import json
 import logging
 from asyncio import wait
-from typing import Any, Awaitable, Callable, Dict, Optional, Text
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Text
 from urllib.parse import urljoin
 
 import httpx
+from rasa.cli import utils as cli_utils
 from rasa.core.channels import InputChannel, OutputChannel, UserMessage
 from sanic import Blueprint, response
 from sanic.request import Request
@@ -51,6 +52,18 @@ class TurnOutput(OutputChannel):
         await self._send_message(
             {"to": recipient_id, "type": "image", "image": {"link": image}}
         )
+
+    async def send_text_with_buttons(
+        self,
+        recipient_id: Text,
+        text: Text,
+        buttons: List[Dict[Text, Any]],
+        **kwargs: Any,
+    ) -> None:
+        for idx, button in enumerate(buttons):
+            text += "\n"
+            text += cli_utils.button_to_string(button, idx)
+        await self.send_text_message(recipient_id, text, **kwargs)
 
 
 class TurnInput(InputChannel):
