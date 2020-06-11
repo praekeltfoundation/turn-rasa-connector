@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ master, develop,  COV-500-add-docker-build ]
+    branches: [ master, develop ]
 
 jobs:
   build-docker:
