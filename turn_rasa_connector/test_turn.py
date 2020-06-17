@@ -173,7 +173,7 @@ class TurnInputTests(TestCase):
                 "type": "audio",
             }
         )
-        self.assertEqual(message.text, None)
+        self.assertEqual(message.text, "")
         self.assertEqual(message.sender_id, "27820001001")
         self.assertEqual(message.message_id, "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
         self.assertEqual(
@@ -316,7 +316,7 @@ class TurnInputTests(TestCase):
                 },
             }
         )
-        self.assertEqual(message.text, None)
+        self.assertEqual(message.text, "")
         self.assertEqual(message.sender_id, "27820001001")
         self.assertEqual(message.message_id, "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
         self.assertEqual(
@@ -379,7 +379,7 @@ class TurnInputTests(TestCase):
                 "type": "contacts",
             }
         )
-        self.assertEqual(message.text, None)
+        self.assertEqual(message.text, "")
         self.assertEqual(message.sender_id, "16505551234")
         self.assertEqual(message.message_id, "ABGGFlA4dSRvAgo6C4Z53hMh1ugR")
         self.assertEqual(
@@ -443,7 +443,7 @@ class TurnInputTests(TestCase):
                 "type": "location",
             }
         )
-        self.assertEqual(message.text, None)
+        self.assertEqual(message.text, "")
         self.assertEqual(message.sender_id, "16315551234")
         self.assertEqual(message.message_id, "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
         self.assertEqual(
