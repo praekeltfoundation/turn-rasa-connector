@@ -187,7 +187,7 @@ class TurnInput(InputChannel):
         handler = getattr(self, f"handle_{message_type}")
         return handler(message)
 
-    def handle_common(self, text: Optional[str], message: dict) -> UserMessage:
+    def handle_common(self, text: Text, message: dict) -> UserMessage:
         return UserMessage(
             text=text,
             output_channel=self.get_output_channel(
@@ -203,7 +203,7 @@ class TurnInput(InputChannel):
         return self.handle_common(message.pop("text")["body"], message)
 
     def handle_media(self, media_type: str, message: dict) -> UserMessage:
-        return self.handle_common(message[media_type].pop("caption", None), message)
+        return self.handle_common(message[media_type].pop("caption", ""), message)
 
     def handle_audio(self, message: dict) -> UserMessage:
         return self.handle_media("audio", message)
@@ -221,10 +221,10 @@ class TurnInput(InputChannel):
         return self.handle_media("voice", message)
 
     def handle_contacts(self, message: dict) -> UserMessage:
-        return self.handle_common(None, message)
+        return self.handle_common("", message)
 
     def handle_location(self, message: dict) -> UserMessage:
-        return self.handle_common(None, message)
+        return self.handle_common("", message)
 
     def get_output_channel(
         self, conversation_claim: Optional[Text] = None
