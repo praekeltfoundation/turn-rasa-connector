@@ -539,14 +539,15 @@ async def test_send_image_message(turn_mock_server: Sanic):
         "27820001001",
         {
             "image": f"http://{turn_mock_server.host}:{turn_mock_server.port}"
-            "/images/image.jpg"
+            "/images/image.jpg",
+            "text": "test caption",
         },
     )
     [message] = turn_mock_server.app.messages
     assert message.json == {
         "to": "27820001001",
         "type": "image",
-        "image": {"id": "b31d776c767e5594f0db4792b8e30c9e"},
+        "image": {"id": "b31d776c767e5594f0db4792b8e30c9e", "caption": "test caption"},
     }
     assert message.headers["Authorization"] == "Bearer testtoken"
     assert message.headers["Content-Type"] == "application/json"
@@ -606,3 +607,20 @@ async def test_send_custom_message(turn_mock_server: Sanic):
     }
     assert message.headers["Authorization"] == "Bearer testtoken"
     assert message.headers["Content-Type"] == "application/json"
+
+
+@pytest.mark.asyncio
+async def test_send_not_implemented(turn_mock_server: Sanic):
+    """
+    If the output channel gets a message that it doesn't know what to do with, it
+    should raise an exception
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}", token="testtoken"
+    )
+    e = None
+    try:
+        await output_channel.send_response("27820001001", {"unimplemented": "message"})
+    except NotImplementedError as err:
+        e = err
+    assert e is not None

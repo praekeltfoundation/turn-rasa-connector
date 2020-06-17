@@ -64,6 +64,23 @@ class TurnOutput(OutputChannel):
         # TODO: Retries and error handling
         result.raise_for_status()
 
+    async def send_response(self, recipient_id: Text, message: Dict[Text, Any]) -> None:
+        # The Rasa implementation for this sends the text and the media part of the
+        # message separately. For WhatsApp, we want to send this as a media message
+        # with a text caption, so we handle it differently here
+        if message.get("image"):
+            await self.send_image_url(recipient_id, message.pop("image"), **message)
+        elif message.get("custom"):
+            await self.send_custom_json(recipient_id, message.pop("custom"), **message)
+        elif message.get("buttons"):
+            await self.send_text_with_buttons(
+                recipient_id, message.pop("text"), message.pop("buttons"), **message
+            )
+        elif message.get("text"):
+            await self.send_text_message(recipient_id, message.pop("text"), **message)
+        else:
+            raise NotImplementedError()
+
     async def send_text_message(
         self, recipient_id: Text, text: Text, **kwargs: Any
     ) -> None:
@@ -72,11 +89,14 @@ class TurnOutput(OutputChannel):
         )
 
     async def send_image_url(
-        self, recipient_id: Text, image: Text, **kwargs: Any
+        self, recipient_id: Text, image: Text, text: Text = "", **kwargs: Any
     ) -> None:
         media_id = await get_media_id(self.url, self.token, image)
+        image_obj = {"id": media_id}
+        if text:
+            image_obj["caption"] = text
         await self._send_message(
-            {"to": recipient_id, "type": "image", "image": {"id": media_id}}
+            {"to": recipient_id, "type": "image", "image": image_obj}
         )
 
     async def send_text_with_buttons(
