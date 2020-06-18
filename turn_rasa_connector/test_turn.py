@@ -2,7 +2,6 @@ import hashlib
 import json
 import os
 import time
-from contextlib import asynccontextmanager
 from unittest import TestCase, mock
 from unittest.mock import Mock
 
@@ -714,13 +713,16 @@ async def test_message_processed():
     )
 
     # We need a fake pool, so that we can keep everything in our transaction
-    @asynccontextmanager
-    async def fake_pool():
-        yield conn
+    class FakePool:
+        async def __aenter__(self):
+            return conn
+
+        async def __aexit__(self, exc_type, exc_value, traceback):
+            pass
 
     async def fake_get_postgresql_pool():
         pool = Mock()
-        pool.acquire = fake_pool
+        pool.acquire = FakePool
         return pool
 
     input_channel = TurnInput(None, None, None, None)
