@@ -3,13 +3,16 @@ import hmac
 import json
 import logging
 from asyncio import wait
+from datetime import datetime, timedelta
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Text
 from urllib.parse import urljoin
 
+import asyncpg
 import httpx
 from async_lru import alru_cache
 from rasa.cli import utils as cli_utils
 from rasa.core.channels import InputChannel, OutputChannel, UserMessage
+from rasa.core.events import UserUttered
 from sanic import Blueprint, response
 from sanic.request import Request
 from sanic.response import HTTPResponse
@@ -136,13 +139,57 @@ class TurnInput(InputChannel):
             cls.raise_missing_credentials_exception()
 
         return cls(
-            credentials.get("hmac_secret"), credentials["url"], credentials["token"]
+            credentials.get("hmac_secret"),
+            credentials["url"],
+            credentials["token"],
+            credentials.get("postgresql_url"),
         )
 
-    def __init__(self, hmac_secret: Optional[Text], url: Text, token: Text) -> None:
+    def __init__(
+        self,
+        hmac_secret: Optional[Text],
+        url: Text,
+        token: Text,
+        postgresql_url: Optional[Text],
+    ) -> None:
         self.hmac_secret = hmac_secret
         self.url = url
         self.token = token
+        self.postgresql_url = postgresql_url
+        self._postgresql_pool = None
+
+    async def get_postgresql_pool(self) -> Optional[asyncpg.pool.Pool]:
+        if self._postgresql_pool is None and self.postgresql_url is not None:
+            self._postgresql_pool = await asyncpg.create_pool(self.postgresql_url)
+        return self._postgresql_pool
+
+    async def message_processed(self, sender_id: Text, message_id: Text) -> bool:
+        """
+        Have we processed a message with this ID before
+        """
+        pool = await self.get_postgresql_pool()
+        if pool is None:
+            # If we don't have a postgresql config, don't deduplicate
+            return False
+        async with pool.acquire() as connection:
+            async with connection.transaction():
+                result = await connection.fetchval(
+                    """
+                    SELECT 1
+                    FROM events
+                    WHERE
+                        sender_id = $1 AND
+                        type_name = $2 AND
+                        data::json ->> 'message_id' = $3 AND
+                        timestamp > $4
+                    LIMIT 1
+                    """,
+                    sender_id,
+                    UserUttered.type_name,
+                    message_id,
+                    (datetime.utcnow() - timedelta(days=1)).timestamp(),
+                )
+                return result == 1
 
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]

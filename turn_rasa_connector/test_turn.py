@@ -1,11 +1,20 @@
 import hashlib
+import json
+import os
+import time
+from contextlib import asynccontextmanager
 from unittest import TestCase, mock
+from unittest.mock import Mock
 
+import asyncpg
 import pytest
 from rasa.core import run, utils
+from rasa.core.events import UserUttered
 from sanic import Sanic, response
 
 from turn_rasa_connector.turn import TurnInput, TurnOutput
+
+POSTGRESQL_URL = os.environ.get("TEST_POSTGRES_URL", "postgres://")
 
 
 class TurnInputTests(TestCase):
@@ -16,18 +25,26 @@ class TurnInputTests(TestCase):
     def _create_input_channel(
         self, hmac_secret=None, url="https://turn", token="testtoken"
     ):
-        return TurnInput(hmac_secret=hmac_secret, url=url, token=token)
+        return TurnInput(
+            hmac_secret=hmac_secret, url=url, token=token, postgresql_url=None
+        )
 
     def test_from_credentials(self):
         """
         Stores the credentials on the class
         """
         instance = TurnInput.from_credentials(
-            {"hmac_secret": "test-secret", "url": "https://turn", "token": "testtoken"}
+            {
+                "hmac_secret": "test-secret",
+                "url": "https://turn",
+                "token": "testtoken",
+                "postgresql_url": "postgresql://",
+            }
         )
         self.assertEqual(instance.hmac_secret, "test-secret")
         self.assertEqual(instance.url, "https://turn")
         self.assertEqual(instance.token, "testtoken")
+        self.assertEqual(instance.postgresql_url, "postgresql://")
 
     def test_no_credentials(self):
         """
@@ -624,3 +641,81 @@ async def test_send_not_implemented(turn_mock_server: Sanic):
     except NotImplementedError as err:
         e = err
     assert e is not None
+
+
+@pytest.mark.asyncio
+async def test_message_processed_no_postgresql():
+    """
+    If there's no config for postgresql, then don't deduplicate
+    """
+    input_channel = TurnInput(None, None, None, None)
+    result = await input_channel.message_processed("27820001001", "test-message-id")
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_postgresql_pool():
+    """
+    If there's config for postgresql, should return a postgresql pool
+    """
+    input_channel = TurnInput(None, None, None, POSTGRESQL_URL)
+    pool = await input_channel.get_postgresql_pool()
+    assert isinstance(pool, asyncpg.pool.Pool)
+
+
+@pytest.mark.asyncio
+async def test_message_processed():
+    """
+    If this is the first time the message has been processed, should return False,
+    otherwise return True
+    """
+    conn = await asyncpg.connect(POSTGRESQL_URL)
+    transaction = conn.transaction()
+    # Put everything in a transaction, so that we can rollback at the end of test
+    await transaction.start()
+    await conn.execute(
+        """
+        CREATE TABLE events (
+            id SERIAL,
+            sender_id varchar(255) NOT NULL,
+            type_name varchar(255) NOT NULL,
+            timestamp double precision,
+            data text
+         )"""
+    )
+
+    # We need a fake pool, so that we can keep everything in our transaction
+    @asynccontextmanager
+    async def fake_pool():
+        yield conn
+
+    async def fake_get_postgresql_pool():
+        pool = Mock()
+        pool.acquire = fake_pool
+        return pool
+
+    input_channel = TurnInput(None, None, None, None)
+    input_channel.get_postgresql_pool = fake_get_postgresql_pool
+
+    # Nothing in the table, message should be "not processed"
+    result = await input_channel.message_processed("27820001001", "test-message-id")
+    assert result is False
+
+    # Add message ID to table, message should be "previously processed"
+    await conn.execute(
+        """
+        INSERT INTO events(sender_id, type_name, timestamp, data)
+        VALUES($1, $2, $3, $4)
+        """,
+        "27820001001",
+        UserUttered.type_name,
+        time.time(),
+        json.dumps({"message_id": "test-message-id"}),
+    )
+
+    result = await input_channel.message_processed("27820001001", "test-message-id")
+    assert result is True
+
+    # Rollback any changes we made in the test
+    await transaction.rollback()
+    await conn.close()
