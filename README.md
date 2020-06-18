@@ -17,7 +17,7 @@ hmac_secret (optional) - If specified, validates that the HMAC signature in the 
 
 postgresql_url (optional) - If using PostgreSQL as a tracker store, ignores messages with message IDs that we've already processed (deduplication)
 
-Example:
+Example credentials.yml:
 ```yaml
 turn_rasa_connector.turn.TurnInput:
   url: "https://whatsapp.turn.io"
@@ -27,6 +27,8 @@ turn_rasa_connector.turn.TurnInput:
 ```
 
 ## Development
+Requires PostgreSQL. PostgreSQL location controlled using the TEST_POSTGRES_URL environment variable, defaulting to `postgres://`
+
 ```bash
 ~ pip install -r requirements.txt -r requirements-dev.txt
 ~ black .
