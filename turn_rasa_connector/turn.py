@@ -163,10 +163,15 @@ class TurnInput(InputChannel):
             self._postgresql_pool = await asyncpg.create_pool(self.postgresql_url)
         return self._postgresql_pool
 
-    async def message_processed(self, sender_id: Text, message_id: Text) -> bool:
+    async def message_processed(
+        self, sender_id: Optional[Text], message_id: Optional[Text]
+    ) -> bool:
         """
         Have we processed a message with this ID before
         """
+        if not sender_id or not message_id:
+            return False
+
         pool = await self.get_postgresql_pool()
         if pool is None:
             # If we don't have a postgresql config, don't deduplicate
@@ -228,7 +233,11 @@ class TurnInput(InputChannel):
             for message in messages:
                 try:
                     message["conversation_claim"] = conversation_claim
-                    user_messages.append(self.extract_message(message))
+                    processed = await self.message_processed(
+                        message.get("from"), message.get("id")
+                    )
+                    if not processed:
+                        user_messages.append(self.extract_message(message))
                 except (TypeError, KeyError, AttributeError):
                     logger.warning(f"Invalid message: {json.dumps(message)}")
                     return response.json(

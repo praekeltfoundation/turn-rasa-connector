@@ -162,6 +162,35 @@ class TurnInputTests(TestCase):
             message.output_channel.conversation_claim, "conversation-claim"
         )
 
+    def test_webhook_handle_duplicate_messages(self):
+        """
+        Should skip processing a message if it's been processed already
+        """
+        self.app.agent = mock.Mock()
+
+        async def fake_message_processed(sender_id, message_id):
+            return True
+
+        self.input_channel.message_processed = fake_message_processed
+        request, response = self.app.test_client.post(
+            "/webhooks/turn/webhook",
+            json={
+                "messages": [
+                    {
+                        "type": "text",
+                        "text": {"body": "message body"},
+                        "from": "27820001001",
+                        "id": "message-id",
+                        "timestamp": "1518694235",
+                    }
+                ]
+            },
+            headers={"X-Turn-Claim": "conversation-claim"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json, {"success": True})
+        self.app.agent.handle_message.assert_not_called()
+
     def test_webhook_handle_invalid_messages(self):
         """
         Returns an invalid message error
