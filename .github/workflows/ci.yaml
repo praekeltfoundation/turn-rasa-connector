@@ -42,7 +42,7 @@ jobs:
         ports:
           - 5432:5432
     env:
-      TEST_POSTGRES_URL: postgres://postgres:postgres
+      TEST_POSTGRES_URL: postgres://postgres:postgres@localhost
     strategy:
       matrix:
         python-version: [3.6, 3.7]
