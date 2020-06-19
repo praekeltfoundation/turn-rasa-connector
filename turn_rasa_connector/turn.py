@@ -21,21 +21,26 @@ logger = logging.getLogger(__name__)
 
 
 @alru_cache(maxsize=None)
-async def get_media_id(turn_url: Text, turn_token: Text, url: Text):
+async def get_media_id(turn_url: Text, turn_token: Text, url: Text, http_retries: int):
     # TODO: Respect the caching headers from the URL, rather than indefinitely caching
-    async with httpx.stream("GET", url) as image_response:
-        image_response.raise_for_status()
-        turn_response = await httpx.post(
-            urljoin(turn_url, "/v1/media"),
-            headers={
-                "Authorization": f"Bearer {turn_token}",
-                "Content-Type": image_response.headers["Content-Type"],
-            },
-            data=image_response.aiter_bytes(),
-        )
-        turn_response.raise_for_status()
-        response_data: Any = turn_response.json()
-        return response_data["media"][0]["id"]
+    for i in range(http_retries):
+        try:
+            async with httpx.stream("GET", url) as image_response:
+                image_response.raise_for_status()
+                turn_response = await httpx.post(
+                    urljoin(turn_url, "v1/media"),
+                    headers={
+                        "Authorization": f"Bearer {turn_token}",
+                        "Content-Type": image_response.headers["Content-Type"],
+                    },
+                    data=image_response.aiter_bytes(),
+                )
+                turn_response.raise_for_status()
+                response_data: Any = turn_response.json()
+                return response_data["media"][0]["id"]
+        except httpx.HTTPError as e:
+            if i == http_retries - 1:
+                raise e
 
 
 class TurnOutput(OutputChannel):
@@ -48,11 +53,16 @@ class TurnOutput(OutputChannel):
         return "turn"
 
     def __init__(
-        self, url: Text, token: Text, conversation_claim: Optional[Text] = None
+        self,
+        url: Text,
+        token: Text,
+        http_retries: int = 3,
+        conversation_claim: Optional[Text] = None,
     ):
         self.url = url
         self.token = token
         self.conversation_claim = conversation_claim
+        self.http_retries = http_retries
         super().__init__()
 
     async def _send_message(self, body: dict):
@@ -61,11 +71,16 @@ class TurnOutput(OutputChannel):
             # TODO: End conversation claim at end of session
             headers["X-Turn-Claim-Extend"] = self.conversation_claim
 
-        result = await httpx.post(
-            urljoin(self.url, "/v1/messages"), headers=headers, json=body,
-        )
-        # TODO: Retries and error handling
-        result.raise_for_status()
+        for i in range(self.http_retries):
+            try:
+                result = await httpx.post(
+                    urljoin(self.url, "v1/messages"), headers=headers, json=body,
+                )
+                result.raise_for_status()
+                return
+            except httpx.HTTPError as e:
+                if i == self.http_retries - 1:
+                    raise e
 
     async def send_response(self, recipient_id: Text, message: Dict[Text, Any]) -> None:
         # The Rasa implementation for this sends the text and the media part of the
@@ -94,7 +109,7 @@ class TurnOutput(OutputChannel):
     async def send_image_url(
         self, recipient_id: Text, image: Text, text: Text = "", **kwargs: Any
     ) -> None:
-        media_id = await get_media_id(self.url, self.token, image)
+        media_id = await get_media_id(self.url, self.token, image, self.http_retries)
         image_obj = {"id": media_id}
         if text:
             image_obj["caption"] = text
@@ -143,6 +158,7 @@ class TurnInput(InputChannel):
             credentials["url"],
             credentials["token"],
             credentials.get("postgresql_url"),
+            credentials.get("http_retries", 3),
         )
 
     def __init__(
@@ -151,12 +167,14 @@ class TurnInput(InputChannel):
         url: Text,
         token: Text,
         postgresql_url: Optional[Text],
+        http_retries: int,
     ) -> None:
         self.hmac_secret = hmac_secret
         self.url = url
         self.token = token
         self.postgresql_url = postgresql_url
         self._postgresql_pool = None
+        self.http_retries = http_retries
 
     async def get_postgresql_pool(self) -> Optional[asyncpg.pool.Pool]:
         if self._postgresql_pool is None and self.postgresql_url is not None:
@@ -305,4 +323,4 @@ class TurnInput(InputChannel):
     def get_output_channel(
         self, conversation_claim: Optional[Text] = None
     ) -> OutputChannel:
-        return TurnOutput(self.url, self.token, conversation_claim)
+        return TurnOutput(self.url, self.token, self.http_retries, conversation_claim)

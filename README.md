@@ -17,13 +17,16 @@ hmac_secret (optional) - If specified, validates that the HMAC signature in the 
 
 postgresql_url (optional) - If using PostgreSQL as a tracker store, ignores messages with message IDs that we've already processed (deduplication)
 
+http_retries (optional) - Number of times to retry HTTP requests to Turn. Defaults to 3
+
 Example credentials.yml:
 ```yaml
 turn_rasa_connector.turn.TurnInput:
   url: "https://whatsapp.turn.io"
   token: "xxxxxxxxxxx"
   hmac_secret: "xxxx-xxxx-xxxx"
-  postgresql_url: "postgres://
+  postgresql_url: "postgres://"
+  http_retries: 3
 ```
 
 ## Development

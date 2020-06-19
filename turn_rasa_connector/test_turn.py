@@ -6,10 +6,13 @@ from unittest import TestCase, mock
 from unittest.mock import Mock
 
 import asyncpg
+import httpx
 import pytest
 from rasa.core import run, utils
 from rasa.core.events import UserUttered
-from sanic import Sanic, response
+from sanic import Sanic
+from sanic import exceptions as sanic_exceptions
+from sanic import response
 
 from turn_rasa_connector.turn import TurnInput, TurnOutput
 
@@ -25,7 +28,11 @@ class TurnInputTests(TestCase):
         self, hmac_secret=None, url="https://turn", token="testtoken"
     ):
         return TurnInput(
-            hmac_secret=hmac_secret, url=url, token=token, postgresql_url=None
+            hmac_secret=hmac_secret,
+            url=url,
+            token=token,
+            postgresql_url=None,
+            http_retries=3,
         )
 
     def test_from_credentials(self):
@@ -38,12 +45,14 @@ class TurnInputTests(TestCase):
                 "url": "https://turn",
                 "token": "testtoken",
                 "postgresql_url": "postgresql://",
+                "http_retries": 3,
             }
         )
         self.assertEqual(instance.hmac_secret, "test-secret")
         self.assertEqual(instance.url, "https://turn")
         self.assertEqual(instance.token, "testtoken")
         self.assertEqual(instance.postgresql_url, "postgresql://")
+        self.assertEqual(instance.http_retries, 3)
 
     def test_no_credentials(self):
         """
@@ -520,6 +529,7 @@ def turn_mock_server(loop, sanic_client):
     app = Sanic("mock_turn")
     app.messages = []
     app.media = []
+    app.failures = []
 
     @app.route("/v1/messages", methods=["POST"])
     async def messages(request):
@@ -534,6 +544,16 @@ def turn_mock_server(loop, sanic_client):
     @app.route("/images/<image>", methods=["GET"])
     async def images(request, image):
         return response.raw(b"testimagecontent", content_type="image/jpeg")
+
+    @app.route("/failure/<ignored>", methods=["GET"])
+    async def failure(request, ignored):
+        app.failures.append(request)
+        raise sanic_exceptions.ServerError("error")
+
+    @app.route("/failure/v1/messages", methods=["POST"])
+    async def message_failure(request):
+        app.failures.append(request)
+        raise sanic_exceptions.ServerError("error")
 
     return loop.run_until_complete(sanic_client(app))
 
@@ -555,6 +575,24 @@ async def test_send_text_message(turn_mock_server: Sanic):
     }
     assert message.headers["Authorization"] == "Bearer testtoken"
     assert message.headers["Content-Type"] == "application/json"
+
+
+@pytest.mark.asyncio
+async def test_send_text_message_failure(turn_mock_server: Sanic):
+    """
+    If the HTTP request to Turn fails, should retry up to 3 times
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}/failure/",
+        token="testtoken",
+    )
+    exception = None
+    try:
+        await output_channel.send_response("27820001001", {"text": "test message"})
+    except httpx.HTTPError as e:
+        exception = e
+    assert exception is not None
+    assert len(turn_mock_server.app.failures) == 3
 
 
 @pytest.mark.asyncio
@@ -609,6 +647,30 @@ async def test_send_image_message(turn_mock_server: Sanic):
         },
     )
     assert len(turn_mock_server.app.media) == 1
+
+
+@pytest.mark.asyncio
+async def test_send_image_message_failure(turn_mock_server: Sanic):
+    """
+    Retries on failures
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}", token="testtoken"
+    )
+    exception = None
+    try:
+        await output_channel.send_response(
+            "27820001001",
+            {
+                "image": f"http://{turn_mock_server.host}:{turn_mock_server.port}"
+                "/failure/image.png",
+                "text": "test caption",
+            },
+        )
+    except httpx.HTTPError as e:
+        exception = e
+    assert exception is not None
+    assert len(turn_mock_server.app.failures) == 3
 
 
 @pytest.mark.asyncio
@@ -676,7 +738,7 @@ async def test_message_processed_no_postgresql():
     """
     If there's no config for postgresql, then don't deduplicate
     """
-    input_channel = TurnInput(None, None, None, None)
+    input_channel = TurnInput(None, None, None, None, None)
     result = await input_channel.message_processed("27820001001", "test-message-id")
     assert result is False
 
@@ -686,7 +748,7 @@ async def test_postgresql_pool():
     """
     If there's config for postgresql, should return a postgresql pool
     """
-    input_channel = TurnInput(None, None, None, POSTGRESQL_URL)
+    input_channel = TurnInput(None, None, None, POSTGRESQL_URL, None)
     pool = await input_channel.get_postgresql_pool()
     assert isinstance(pool, asyncpg.pool.Pool)
 
@@ -725,7 +787,7 @@ async def test_message_processed():
         pool.acquire = FakePool
         return pool
 
-    input_channel = TurnInput(None, None, None, None)
+    input_channel = TurnInput(None, None, None, None, None)
     input_channel.get_postgresql_pool = fake_get_postgresql_pool
 
     # Nothing in the table, message should be "not processed"
