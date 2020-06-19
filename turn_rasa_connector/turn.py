@@ -8,7 +8,6 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, Text
 from urllib.parse import urljoin
 
 import asyncpg
-import httpcore
 import httpx
 from async_lru import alru_cache
 from rasa.cli import utils as cli_utils
@@ -39,7 +38,7 @@ async def get_media_id(turn_url: Text, turn_token: Text, url: Text, http_retries
                 turn_response.raise_for_status()
                 response_data: Any = turn_response.json()
                 return response_data["media"][0]["id"]
-        except (httpx.HTTPError, httpcore.TimeoutException, httpcore.NetworkError) as e:
+        except httpx.HTTPError as e:
             if i == http_retries - 1:
                 raise e
 
@@ -79,11 +78,7 @@ class TurnOutput(OutputChannel):
                 )
                 result.raise_for_status()
                 return
-            except (
-                httpx.HTTPError,
-                httpcore.TimeoutException,
-                httpcore.NetworkError,
-            ) as e:
+            except httpx.HTTPError as e:
                 if i == self.http_retries - 1:
                     raise e
 
