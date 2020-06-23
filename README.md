@@ -33,20 +33,20 @@ turn_rasa_connector.turn.TurnInput:
 This connector will handle receiving and extending the Turn conversation claim with
 every message reply.
 
-This is controlled by the `session` key on the message:
-- `extend` - This is the default if no session key is supplied. Will extend the conversation claim.
+This is controlled by the `claim` key on the message:
+- `extend` - This is the default if no claim key is supplied. Will extend the conversation claim.
 - `release` - Will release the conversation claim.
 
 Example:
 ```yaml
 utter_continue:
   - text: "What would you like to do?"
-  # session: extend
+  # claim: extend
   # Is the default
 
 utter_end:
-  - text: "Thank you! Your session will now end"
-    session: release
+  - text: "Thank you! Your conversation claim will now end"
+    claim: release
 ```
 
 ## Development
