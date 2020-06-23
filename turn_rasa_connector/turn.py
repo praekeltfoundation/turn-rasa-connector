@@ -65,11 +65,15 @@ class TurnOutput(OutputChannel):
         self.http_retries = http_retries
         super().__init__()
 
-    async def _send_message(self, body: dict):
+    async def _send_message(
+        self, body: dict, session: Optional[Text] = "extend", **kwargs
+    ) -> None:
         headers = {"Authorization": f"Bearer {self.token}"}
         if self.conversation_claim:
-            # TODO: End conversation claim at end of session
-            headers["X-Turn-Claim-Extend"] = self.conversation_claim
+            if session == "extend":
+                headers["X-Turn-Claim-Extend"] = self.conversation_claim
+            elif session == "release":
+                headers["X-Turn-Claim-Release"] = self.conversation_claim
 
         for i in range(self.http_retries):
             try:
@@ -103,7 +107,7 @@ class TurnOutput(OutputChannel):
         self, recipient_id: Text, text: Text, **kwargs: Any
     ) -> None:
         await self._send_message(
-            {"to": recipient_id, "type": "text", "text": {"body": text}}
+            {"to": recipient_id, "type": "text", "text": {"body": text}}, **kwargs
         )
 
     async def send_image_url(
@@ -114,7 +118,7 @@ class TurnOutput(OutputChannel):
         if text:
             image_obj["caption"] = text
         await self._send_message(
-            {"to": recipient_id, "type": "image", "image": image_obj}
+            {"to": recipient_id, "type": "image", "image": image_obj}, **kwargs
         )
 
     async def send_text_with_buttons(
@@ -133,7 +137,7 @@ class TurnOutput(OutputChannel):
         self, recipient_id: Text, json_message: Dict[Text, Any], **kwargs: Any
     ) -> None:
         json_message["to"] = recipient_id
-        await self._send_message(json_message)
+        await self._send_message(json_message, **kwargs)
 
     # TODO: elements message type
     # TODO: attachment message type

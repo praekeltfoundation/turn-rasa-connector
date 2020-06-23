@@ -29,6 +29,26 @@ turn_rasa_connector.turn.TurnInput:
   http_retries: 3
 ```
 
+## Conversation Claims
+This connector will handle receiving and extending the Turn conversation claim with
+every message reply.
+
+This is controlled by the `session` key on the message:
+- `extend` - This is the default if no session key is supplied. Will extend the conversation claim.
+- `release` - Will release the conversation claim.
+
+Example:
+```yaml
+utter_continue:
+  - text: "What would you like to do?"
+  # session: extend
+  # Is the default
+
+utter_end:
+  - text: "Thank you! Your session will now end"
+    session: release
+```
+
 ## Development
 Requires PostgreSQL. PostgreSQL location controlled using the TEST_POSTGRES_URL environment variable, defaulting to `postgres://`
 
