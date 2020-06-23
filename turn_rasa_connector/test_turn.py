@@ -596,7 +596,7 @@ async def test_send_text_message_failure(turn_mock_server: Sanic):
 
 
 @pytest.mark.asyncio
-async def test_convesation_claim(turn_mock_server: Sanic):
+async def test_conversation_claim(turn_mock_server: Sanic):
     """
     Extends the conversation claim if possible
     """
@@ -608,6 +608,23 @@ async def test_convesation_claim(turn_mock_server: Sanic):
     await output_channel.send_response("27820001001", {"text": "test message"})
     [message] = turn_mock_server.app.messages
     assert message.headers["X-Turn-Claim-Extend"] == "conversation-claim-id"
+
+
+@pytest.mark.asyncio
+async def test_release_conversation_claim(turn_mock_server: Sanic):
+    """
+    Releases the conversation claim if requested and possible
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}",
+        token="testtoken",
+        conversation_claim="conversation-claim-id",
+    )
+    await output_channel.send_response(
+        "27820001001", {"text": "test message", "claim": "release"}
+    )
+    [message] = turn_mock_server.app.messages
+    assert message.headers["X-Turn-Claim-Release"] == "conversation-claim-id"
 
 
 @pytest.mark.asyncio
