@@ -66,13 +66,13 @@ class TurnOutput(OutputChannel):
         super().__init__()
 
     async def _send_message(
-        self, body: dict, session: Optional[Text] = "extend", **kwargs
+        self, body: dict, claim: Optional[Text] = "extend", **kwargs
     ) -> None:
         headers = {"Authorization": f"Bearer {self.token}"}
         if self.conversation_claim:
-            if session == "extend":
+            if claim == "extend":
                 headers["X-Turn-Claim-Extend"] = self.conversation_claim
-            elif session == "release":
+            elif claim == "release":
                 headers["X-Turn-Claim-Release"] = self.conversation_claim
 
         for i in range(self.http_retries):

@@ -621,7 +621,7 @@ async def test_release_conversation_claim(turn_mock_server: Sanic):
         conversation_claim="conversation-claim-id",
     )
     await output_channel.send_response(
-        "27820001001", {"text": "test message", "session": "release"}
+        "27820001001", {"text": "test message", "claim": "release"}
     )
     [message] = turn_mock_server.app.messages
     assert message.headers["X-Turn-Claim-Release"] == "conversation-claim-id"
