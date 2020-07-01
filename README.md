@@ -1,6 +1,6 @@
 # Turn Rasa Connector
 
-_Currently under development_
+_Currently ready and running in production_
 
 A Rasa Connector for https://www.turn.io/
 
@@ -36,6 +36,7 @@ every message reply.
 This is controlled by the `claim` key on the message:
 - `extend` - This is the default if no claim key is supplied. Will extend the conversation claim.
 - `release` - Will release the conversation claim.
+- `revert` - Will release the conversation claim, and instead of sending the user a response, tell Turn Automation to process the last message, 
 
 Example:
 ```yaml
@@ -47,6 +48,10 @@ utter_continue:
 utter_end:
   - text: "Thank you! Your conversation claim will now end"
     claim: release
+
+utter_exit:
+  - text: "this won't be sent"
+  - claim: revert
 ```
 
 ## Development
