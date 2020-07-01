@@ -80,6 +80,7 @@ class TurnOutput(OutputChannel):
         urlpath = "v1/messages"
         if self.conversation_claim and self.inbound_message_id and claim == "revert":
             urlpath = f"v1/messages/{self.inbound_message_id}/automation"
+            headers["Accept"] = "application/vnd.v1+json"
             body = None
 
         for i in range(self.http_retries):
