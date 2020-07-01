@@ -169,6 +169,7 @@ class TurnInputTests(TestCase):
         self.assertEqual(
             message.output_channel.conversation_claim, "conversation-claim"
         )
+        self.assertEqual(message.output_channel.inbound_message_id, "message-id")
 
     def test_webhook_handle_duplicate_messages(self):
         """
@@ -528,12 +529,18 @@ def test_output_channel_name():
 def turn_mock_server(loop, sanic_client):
     app = Sanic("mock_turn")
     app.messages = []
+    app.automation_messages = []
     app.media = []
     app.failures = []
 
     @app.route("/v1/messages", methods=["POST"])
     async def messages(request):
         app.messages.append(request)
+        return response.json({})
+
+    @app.route("/v1/messages/<message_id>/automation", methods=["POST"])
+    async def automation_messages(request, message_id):
+        app.automation_messages.append(request)
         return response.json({})
 
     @app.route("/v1/media", methods=["POST"])
@@ -625,6 +632,27 @@ async def test_release_conversation_claim(turn_mock_server: Sanic):
     )
     [message] = turn_mock_server.app.messages
     assert message.headers["X-Turn-Claim-Release"] == "conversation-claim-id"
+
+
+@pytest.mark.asyncio
+async def test_revert_conversation_claim(turn_mock_server: Sanic):
+    """
+    Reverts (tell turn automation to handle the message instead) the conversation claim
+    if requested and possible
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}",
+        token="testtoken",
+        conversation_claim="conversation-claim-id",
+        inbound_message_id="inbound-message-id",
+    )
+    await output_channel.send_response(
+        "27820001001", {"text": "test message", "claim": "revert"}
+    )
+    [message] = turn_mock_server.app.automation_messages
+    assert message.method == "POST"
+    assert message.headers["X-Turn-Claim-Release"] == "conversation-claim-id"
+    assert message.url.endswith("/v1/messages/inbound-message-id/automation")
 
 
 @pytest.mark.asyncio

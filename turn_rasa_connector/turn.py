@@ -58,27 +58,34 @@ class TurnOutput(OutputChannel):
         token: Text,
         http_retries: int = 3,
         conversation_claim: Optional[Text] = None,
+        inbound_message_id: Optional[Text] = None,
     ):
         self.url = url
         self.token = token
         self.conversation_claim = conversation_claim
         self.http_retries = http_retries
+        self.inbound_message_id = inbound_message_id
         super().__init__()
 
     async def _send_message(
-        self, body: dict, claim: Optional[Text] = "extend", **kwargs
+        self, body: Optional[dict], claim: Optional[Text] = "extend", **kwargs
     ) -> None:
         headers = {"Authorization": f"Bearer {self.token}"}
         if self.conversation_claim:
             if claim == "extend":
                 headers["X-Turn-Claim-Extend"] = self.conversation_claim
-            elif claim == "release":
+            elif claim == "release" or claim == "revert":
                 headers["X-Turn-Claim-Release"] = self.conversation_claim
+
+        urlpath = "v1/messages"
+        if self.conversation_claim and self.inbound_message_id and claim == "revert":
+            urlpath = f"v1/messages/{self.inbound_message_id}/automation"
+            body = None
 
         for i in range(self.http_retries):
             try:
                 result = await httpx.post(
-                    urljoin(self.url, "v1/messages"), headers=headers, json=body,
+                    urljoin(self.url, urlpath), headers=headers, json=body,
                 )
                 result.raise_for_status()
                 return
@@ -289,7 +296,7 @@ class TurnInput(InputChannel):
         return UserMessage(
             text=text,
             output_channel=self.get_output_channel(
-                message.pop("conversation_claim", None)
+                message.pop("conversation_claim", None), message.get("id")
             ),
             sender_id=message.pop("from"),
             input_channel=self.name(),
@@ -325,6 +332,14 @@ class TurnInput(InputChannel):
         return self.handle_common("", message)
 
     def get_output_channel(
-        self, conversation_claim: Optional[Text] = None
+        self,
+        conversation_claim: Optional[Text] = None,
+        inbound_message_id: Optional[Text] = None,
     ) -> OutputChannel:
-        return TurnOutput(self.url, self.token, self.http_retries, conversation_claim)
+        return TurnOutput(
+            self.url,
+            self.token,
+            self.http_retries,
+            conversation_claim,
+            inbound_message_id,
+        )
