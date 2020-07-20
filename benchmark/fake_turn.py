@@ -7,22 +7,25 @@ from sanic.response import json
 
 app = Sanic("fake_turn")
 
+MINIMUM_LATENCY = 0.05
+MAXIMUM_LATENCY = 0.5
+
 
 @app.post("/v1/messages")
 async def create_message(request):
-    await asyncio.sleep(random.uniform(0.05, 0.5))
+    await asyncio.sleep(random.uniform(MINIMUM_LATENCY, MAXIMUM_LATENCY))
     return json({"messages": [{"id": uuid4().hex}]}, status=201)
 
 
 @app.post("/v1/media")
 async def create_media(request):
-    await asyncio.sleep(random.uniform(0.05, 0.5))
+    await asyncio.sleep(random.uniform(MINIMUM_LATENCY, MAXIMUM_LATENCY))
     return json({"media": [{"id": uuid4().hex}]}, status=201)
 
 
 @app.post("v1/messages/<message_id>/automation")
 async def rerun_automation(request, message_id):
-    await asyncio.sleep(random.uniform(0.05, 0.5))
+    await asyncio.sleep(random.uniform(MINIMUM_LATENCY, MAXIMUM_LATENCY))
     return json({}, status=201)
 
 
