@@ -18,6 +18,7 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 
 logger = logging.getLogger(__name__)
+turn_client = httpx.Client()
 
 
 @alru_cache(maxsize=None)
@@ -25,9 +26,9 @@ async def get_media_id(turn_url: Text, turn_token: Text, url: Text, http_retries
     # TODO: Respect the caching headers from the URL, rather than indefinitely caching
     for i in range(http_retries):
         try:
-            async with httpx.stream("GET", url) as image_response:
+            async with turn_client.stream("GET", url) as image_response:
                 image_response.raise_for_status()
-                turn_response = await httpx.post(
+                turn_response = await turn_client.post(
                     urljoin(turn_url, "v1/media"),
                     headers={
                         "Authorization": f"Bearer {turn_token}",
@@ -85,7 +86,7 @@ class TurnOutput(OutputChannel):
 
         for i in range(self.http_retries):
             try:
-                result = await httpx.post(
+                result = await turn_client.post(
                     urljoin(self.url, urlpath), headers=headers, json=body,
                 )
                 result.raise_for_status()
