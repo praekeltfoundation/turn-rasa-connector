@@ -317,7 +317,7 @@ class TurnInputTests(TestCase):
             },
         )
 
-    def test_handle_document(self):
+    def test_handle_document_pdf(self):
         """
         Returns a UserMessage with valid parameters
         """
