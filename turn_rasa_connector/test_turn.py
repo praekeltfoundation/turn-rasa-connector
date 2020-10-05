@@ -590,8 +590,7 @@ def turn_mock_server(loop, sanic_client):
 
     @app.route("/documents/<document>", methods=["GET"])
     async def documents(request, document):
-        return response.raw(
-            b"testdocumentcontent", content_type="application/pdf")
+        return response.raw(b"testdocumentcontent", content_type="application/pdf")
 
     @app.route("/failure/<ignored>", methods=["GET"])
     async def failure(request, ignored):
@@ -735,6 +734,7 @@ async def test_send_image_message(turn_mock_server: Sanic):
     )
     assert len(turn_mock_server.app.media) == 1
 
+
 @pytest.mark.asyncio
 async def test_send_document_message(turn_mock_server: Sanic):
     """
@@ -755,7 +755,10 @@ async def test_send_document_message(turn_mock_server: Sanic):
     assert message.json == {
         "to": "27820001001",
         "type": "document",
-        "document": {"id": "d66084f148673c1abdcfdeeea673f2fb", "caption": "test caption"},
+        "document": {
+            "id": "d66084f148673c1abdcfdeeea673f2fb",
+            "caption": "test caption",
+        },
     }
     assert message.headers["Authorization"] == "Bearer testtoken"
     assert message.headers["Content-Type"] == "application/json"
@@ -772,6 +775,7 @@ async def test_send_document_message(turn_mock_server: Sanic):
         },
     )
     assert len(turn_mock_server.app.media) == 1
+
 
 @pytest.mark.asyncio
 async def test_send_document_message_failure(turn_mock_server: Sanic):
