@@ -353,7 +353,6 @@ class TurnInputTests(TestCase):
             },
         )
 
-
     def test_handle_video(self):
         """
         Returns a UserMessage with valid parameters
