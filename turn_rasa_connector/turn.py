@@ -23,8 +23,7 @@ turn_client = httpx.Client()
 
 @alru_cache(maxsize=None)
 async def get_media_id(
-    turn_url: Text, turn_token: Text, url: Text, http_retries: int, media_type: Text
-):
+    turn_url: Text, turn_token: Text, url: Text, http_retries: int):
     # TODO: Respect the caching headers from the URL, rather than indefinitely caching
     for i in range(http_retries):
         try:
@@ -129,7 +128,7 @@ class TurnOutput(OutputChannel):
         self, recipient_id: Text, image: Text, text: Text = "", **kwargs: Any
     ) -> None:
         media_id = await get_media_id(
-            self.url, self.token, image, self.http_retries, "image"
+            self.url, self.token, image, self.http_retries
         )
         image_obj = {"id": media_id}
         if text:
@@ -142,7 +141,7 @@ class TurnOutput(OutputChannel):
         self, recipient_id: Text, document: Text, text: Text = "", **kwargs: Any
     ) -> None:
         media_id = await get_media_id(
-            self.url, self.token, document, self.http_retries, "document"
+            self.url, self.token, document, self.http_retries
         )
         document_obj = {"id": media_id}
         if text:
