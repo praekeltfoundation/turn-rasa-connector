@@ -588,6 +588,11 @@ def turn_mock_server(loop, sanic_client):
     async def images(request, image):
         return response.raw(b"testimagecontent", content_type="image/jpeg")
 
+    @app.route("/documents/<document>", methods=["GET"])
+    async def documents(request, document):
+        return response.raw(
+            b"testdocumentcontent", content_type="application/pdf")
+
     @app.route("/failure/<ignored>", methods=["GET"])
     async def failure(request, ignored):
         app.failures.append(request)
@@ -763,7 +768,7 @@ async def test_send_document_message(turn_mock_server: Sanic):
         "27820001001",
         {
             "document": f"http://{turn_mock_server.host}:{turn_mock_server.port}"
-            "/document/doucment.pdf"
+            "/documents/doucment.pdf"
         },
     )
     assert len(turn_mock_server.app.media) == 1
@@ -781,7 +786,7 @@ async def test_send_document_message_failure(turn_mock_server: Sanic):
         await output_channel.send_response(
             "27820001001",
             {
-                "image": f"http://{turn_mock_server.host}:{turn_mock_server.port}"
+                "document": f"http://{turn_mock_server.host}:{turn_mock_server.port}"
                 "/failure/document.pdf",
                 "text": "test caption",
             },
