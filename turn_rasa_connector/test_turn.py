@@ -317,6 +317,43 @@ class TurnInputTests(TestCase):
             },
         )
 
+    def test_handle_document(self):
+        """
+        Returns a UserMessage with valid parameters
+        """
+        message = self.input_channel.extract_message(
+            {
+                "from": "27820001001",
+                "id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+                "document": {
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d",
+                    "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
+                    "mime_type": "application/pdf",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944",
+                    "caption": "See the terms and conditions!",
+                },
+                "timestamp": "1521497954",
+                "type": "document",
+            }
+        )
+        self.assertEqual(message.text, "See the terms and conditions!")
+        self.assertEqual(message.sender_id, "27820001001")
+        self.assertEqual(message.message_id, "ABGGFlA5FpafAgo6tHcNmNjXmuSf")
+        self.assertEqual(
+            message.metadata,
+            {
+                "document": {
+                    "file": "/usr/local/wamedia/shared/b1cf38-8734-4ad3-b4a1-ef0c10d0d",
+                    "id": "b1c68f38-8734-4ad3-b4a1-ef0c10d683",
+                    "mime_type": "application/pdf",
+                    "sha256": "29ed500fa64eb55fc19dc4124acb300e5dcc54a0f822a301ae99944",
+                },
+                "timestamp": "1521497954",
+                "type": "document",
+            },
+        )
+
+
     def test_handle_video(self):
         """
         Returns a UserMessage with valid parameters
