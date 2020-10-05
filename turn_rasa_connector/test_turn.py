@@ -730,6 +730,67 @@ async def test_send_image_message(turn_mock_server: Sanic):
     )
     assert len(turn_mock_server.app.media) == 1
 
+@pytest.mark.asyncio
+async def test_send_document_message(turn_mock_server: Sanic):
+    """
+    Makes an HTTP request to Turn to send the message
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}", token="testtoken"
+    )
+    await output_channel.send_response(
+        "27820001001",
+        {
+            "document": f"http://{turn_mock_server.host}:{turn_mock_server.port}"
+            "/documents/document.pdf",
+            "text": "test caption",
+        },
+    )
+    [message] = turn_mock_server.app.messages
+    assert message.json == {
+        "to": "27820001001",
+        "type": "document",
+        "document": {"id": "b31d776c767e5594f0db4792b8e30c9e", "caption": "test caption"},
+    }
+    assert message.headers["Authorization"] == "Bearer testtoken"
+    assert message.headers["Content-Type"] == "application/json"
+
+    [media] = turn_mock_server.app.media
+    assert media.body == b"testdocumentcontent"
+    assert media.headers["Content-Type"] == "application/pdf"
+
+    await output_channel.send_response(
+        "27820001001",
+        {
+            "document": f"http://{turn_mock_server.host}:{turn_mock_server.port}"
+            "/document/doucment.pdf"
+        },
+    )
+    assert len(turn_mock_server.app.media) == 1
+
+@pytest.mark.asyncio
+async def test_send_document_message_failure(turn_mock_server: Sanic):
+    """
+    Retries on failures
+    """
+    output_channel = TurnOutput(
+        url=f"http://{turn_mock_server.host}:{turn_mock_server.port}", token="testtoken"
+    )
+    exception = None
+    try:
+        await output_channel.send_response(
+            "27820001001",
+            {
+                "image": f"http://{turn_mock_server.host}:{turn_mock_server.port}"
+                "/failure/document.pdf",
+                "text": "test caption",
+            },
+        )
+    except httpx.HTTPError as e:
+        exception = e
+    assert exception is not None
+    assert len(turn_mock_server.app.failures) == 3
+
 
 @pytest.mark.asyncio
 async def test_send_image_message_failure(turn_mock_server: Sanic):
