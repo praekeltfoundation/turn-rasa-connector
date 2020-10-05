@@ -755,7 +755,7 @@ async def test_send_document_message(turn_mock_server: Sanic):
     assert message.json == {
         "to": "27820001001",
         "type": "document",
-        "document": {"id": "b31d776c767e5594f0db4792b8e30c9e", "caption": "test caption"},
+        "document": {"id": "d66084f148673c1abdcfdeeea673f2fb", "caption": "test caption"},
     }
     assert message.headers["Authorization"] == "Bearer testtoken"
     assert message.headers["Content-Type"] == "application/json"
