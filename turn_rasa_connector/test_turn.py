@@ -738,7 +738,7 @@ async def test_send_document_message(turn_mock_server: Sanic):
             "/documents/document.pdf"
         },
     )
-    assert len(turn_mock_server.app.media) == 2
+    assert len(turn_mock_server.app.media) == 1
 
 
 @pytest.mark.asyncio
