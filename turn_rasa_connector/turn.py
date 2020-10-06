@@ -26,15 +26,15 @@ async def get_media_id(turn_url: Text, turn_token: Text, url: Text, http_retries
     # TODO: Respect the caching headers from the URL, rather than indefinitely caching
     for i in range(http_retries):
         try:
-            async with turn_client.stream("GET", url) as image_response:
-                image_response.raise_for_status()
+            async with turn_client.stream("GET", url) as media_response:
+                media_response.raise_for_status()
                 turn_response = await turn_client.post(
                     urljoin(turn_url, "v1/media"),
                     headers={
                         "Authorization": f"Bearer {turn_token}",
-                        "Content-Type": image_response.headers["Content-Type"],
+                        "Content-Type": media_response.headers["Content-Type"],
                     },
-                    data=image_response.aiter_bytes(),
+                    data=media_response.aiter_bytes(),
                 )
                 turn_response.raise_for_status()
                 response_data: Any = turn_response.json()
@@ -101,6 +101,10 @@ class TurnOutput(OutputChannel):
         # with a text caption, so we handle it differently here
         if message.get("image"):
             await self.send_image_url(recipient_id, message.pop("image"), **message)
+        elif message.get("document"):
+            await self.send_document_url(
+                recipient_id, message.pop("document"), **message
+            )
         elif message.get("custom"):
             await self.send_custom_json(recipient_id, message.pop("custom"), **message)
         elif message.get("buttons"):
@@ -128,6 +132,17 @@ class TurnOutput(OutputChannel):
             image_obj["caption"] = text
         await self._send_message(
             {"to": recipient_id, "type": "image", "image": image_obj}, **kwargs
+        )
+
+    async def send_document_url(
+        self, recipient_id: Text, document: Text, text: Text = "", **kwargs: Any
+    ) -> None:
+        media_id = await get_media_id(self.url, self.token, document, self.http_retries)
+        document_obj = {"id": media_id}
+        if text:
+            document_obj["caption"] = text
+        await self._send_message(
+            {"to": recipient_id, "type": "document", "document": document_obj}, **kwargs
         )
 
     async def send_text_with_buttons(
