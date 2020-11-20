@@ -2,6 +2,7 @@ import base64
 import hmac
 import json
 import logging
+import os
 from asyncio import wait
 from datetime import datetime, timedelta
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Text
@@ -9,6 +10,7 @@ from urllib.parse import urljoin
 
 import asyncpg
 import httpx
+import sentry_sdk
 from async_lru import alru_cache
 from rasa.cli import utils as cli_utils
 from rasa.core.channels import InputChannel, OutputChannel, UserMessage
@@ -16,9 +18,17 @@ from rasa.core.events import UserUttered
 from sanic import Blueprint, response
 from sanic.request import Request
 from sanic.response import HTTPResponse
+from sentry_sdk.integrations.logging import LoggingIntegration
+from sentry_sdk.integrations.sanic import SanicIntegration
 
 logger = logging.getLogger(__name__)
 turn_client = httpx.Client()
+
+SENTRY_DSN = os.environ.get("SENTRY_DSN", None)
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN, integrations=[LoggingIntegration(), SanicIntegration()]
+    )
 
 
 @alru_cache(maxsize=None)
