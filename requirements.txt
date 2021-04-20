@@ -1,4 +1,4 @@
 rasa==1.10.2
 async_lru==1.0.2
-asyncpg==0.20.1
+asyncpg==0.21.0
 sentry-sdk==0.15.1
