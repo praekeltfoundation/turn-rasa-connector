@@ -15,8 +15,8 @@ jobs:
         uses: crazy-max/ghaction-docker-meta@v2
         with:
           images: |
-            ghcr.io/praekeltfoundation/turn-rasa
-            praekeltfoundation/turn-rasa
+            ghcr.io/praekeltfoundation/rasa-turn
+            praekeltfoundation/rasa-turn
           tags: |
             type=sha
       - name: login to ghcr
