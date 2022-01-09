@@ -636,6 +636,7 @@ async def test_release_conversation_claim(turn_mock_server: Sanic):
     )
     [message] = turn_mock_server.app.messages
     assert message.headers["X-Turn-Claim-Release"] == "conversation-claim-id"
+    assert message.headers["Content-Length"] == "71"
 
 
 @pytest.mark.asyncio
@@ -658,6 +659,7 @@ async def test_revert_conversation_claim(turn_mock_server: Sanic):
     assert message.headers["X-Turn-Claim-Release"] == "conversation-claim-id"
     assert message.headers["Accept"] == "application/vnd.v1+json"
     assert message.url.endswith("/v1/messages/inbound-message-id/automation")
+    assert message.headers["Content-Length"] == "0"
 
 
 @pytest.mark.asyncio

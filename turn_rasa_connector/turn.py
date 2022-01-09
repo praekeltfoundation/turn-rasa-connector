@@ -95,6 +95,8 @@ class TurnOutput(OutputChannel):
             body = None
 
         for i in range(self.http_retries):
+            if not body:
+                headers["Content-Length"] = "0"
             try:
                 result = await turn_client.post(
                     urljoin(self.url, urlpath), headers=headers, json=body,
