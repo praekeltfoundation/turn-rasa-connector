@@ -205,7 +205,8 @@ class TurnInputTests(TestCase):
         Returns an invalid message error
         """
         request, response = self.app.test_client.post(
-            "/webhooks/turn/webhook", json={"messages": [{"type": "invalid"}]},
+            "/webhooks/turn/webhook",
+            json={"messages": [{"type": "invalid"}]},
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json, {"success": False, "error": "invalid_message"})
@@ -822,7 +823,8 @@ async def test_send_custom_message(turn_mock_server: Sanic):
         url=f"http://{turn_mock_server.host}:{turn_mock_server.port}", token="testtoken"
     )
     await output_channel.send_response(
-        "27820001001", {"custom": {"type": "text", "text": {"body": "test message"}}},
+        "27820001001",
+        {"custom": {"type": "text", "text": {"body": "test message"}}},
     )
     [message] = turn_mock_server.app.messages
     assert message.json == {
