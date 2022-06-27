@@ -99,7 +99,9 @@ class TurnOutput(OutputChannel):
                 headers["Content-Length"] = "0"
             try:
                 result = await turn_client.post(
-                    urljoin(self.url, urlpath), headers=headers, json=body,
+                    urljoin(self.url, urlpath),
+                    headers=headers,
+                    json=body,
                 )
                 result.raise_for_status()
                 return
